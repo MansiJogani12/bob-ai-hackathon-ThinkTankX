@@ -1,79 +1,68 @@
 # Setup Guide
 
-> **This file is read by the automated evaluation pipeline. Be precise and complete.**
+This guide describes the actual local setup for YieldSentinel AI.
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
-
-- [ ] [e.g., Python 3.11+]
-- [ ] [e.g., Node.js 18+]
-- [ ] [e.g., Docker Desktop]
-- [ ] [e.g., An IBM Cloud account with watsonx.ai access]
+- Python 3.11+
+- Node.js 18+ and npm
 
 ## Environment Variables
 
-Copy `.env.example` to `.env` and fill in the values:
-
-```bash
-cp .env.example .env
-```
+The AI assistant is optional. To enable it, configure `src/frontend/.env.local`:
 
 | Variable | Description | Required |
 |---|---|---|
-| `WATSONX_API_KEY` | Your IBM watsonx.ai API key | Yes |
-| `WATSONX_PROJECT_ID` | Your watsonx.ai project ID | Yes |
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `SLACK_WEBHOOK_URL` | Slack webhook for alerts | No |
+| `OPENROUTER_API_KEY` | OpenRouter API key for the chatbot | No |
+| `OPENROUTER_MODEL` | OpenRouter model identifier | No |
 
 ## Installation
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/[your-org]/[your-repo].git
-cd [your-repo]
+### Windows one-command setup
 
-# 2. Install backend dependencies
-[your command — e.g.: pip install -r requirements.txt]
+From the repository root, run the setup script once:
 
-# 3. Install frontend dependencies (if applicable)
-[your command — e.g.: cd frontend && npm install]
+```powershell
+.\setup.ps1
+```
 
-# 4. Set up the database (if applicable)
-[your command — e.g.: python manage.py migrate]
+The script creates `src/backend/.venv`, installs Python dependencies, and runs `npm install` in the frontend.
+
+### Manual installation
+
+```powershell
+cd src/backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+cd ..\frontend
+npm install
 ```
 
 ## Running the Application
 
-```bash
-# Start the backend
-[your command — e.g.: uvicorn app.main:app --reload]
+Start both services from the repository root:
 
-# Start the frontend (in a separate terminal, if applicable)
-[your command — e.g.: cd frontend && npm run dev]
+```powershell
+.\start.ps1
 ```
 
-The application will be available at: `http://localhost:[PORT]`
+The application is available at `http://localhost:3000`. The API runs at `http://localhost:8000`.
+
+The trained model is included in `src/backend/yieldsentinel_best_model.pkl`; retraining is optional:
+
+```powershell
+cd src/backend
+.\.venv\Scripts\python.exe train_model.py --data uci-secom.csv
+```
 
 ## Running Tests
 
-```bash
-[your test command — e.g.: pytest tests/ -v]
-```
-
-## Quick Demo (Optional)
-
-If you have a demo script or sample data to showcase the project quickly:
-
-```bash
-[e.g.: python demo/seed_demo_data.py]
-[e.g.: open http://localhost:8000/demo]
-```
+No automated test suite is currently included. Check the API with `http://localhost:8000/` after startup.
 
 ## Troubleshooting
 
 | Issue | Solution |
 |---|---|
-| [e.g., `ModuleNotFoundError`] | [e.g., Run `pip install -r requirements.txt` again] |
-| [e.g., Database connection refused] | [e.g., Ensure PostgreSQL is running: `docker compose up db`] |
-| [e.g., watsonx.ai 401 error] | [e.g., Check `WATSONX_API_KEY` in your `.env` file] |
+| `ModuleNotFoundError` | Run `.\setup.ps1` again, then restart with `.\start.ps1`. |
+| `WinError 32` during pip install | Close any running backend or Python process and run `.\setup.ps1` again. |
+| Chatbot unavailable | Check `OPENROUTER_API_KEY` in `src/frontend/.env.local`; the dashboard itself does not require it. |

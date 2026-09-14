@@ -1,6 +1,4 @@
-# 🚀 [Your Project Title Here]
-
-> ⚠️ **Replace everything in `[ ]` brackets with your actual content before submission.**
+# 🚀 Wafer Yield Root Cause & Defect Pattern Analyser
 
 ---
 
@@ -8,36 +6,36 @@
 
 | Field | Value |
 |---|---|
-| **Team Name** | [Your Team Name] |
-| **Track** | [AI / DevOps / Sustainability / Open] |
-| **Team Lead** | [Name] — [email@ibm.com] |
-| **Members** | [Name 1], [Name 2], [Name 3] |
+| **Team Name** | ThinkTankX |
+| **Track** | AI |
+| **Team Lead** | Yahvi Tanna - 24cs100@charusat.edu.in |
+| **Members** | Mansi Jogani, Khushi Undhad, Priyanshu Macwan |
 
 ---
 
 ## 🎯 Problem Statement
 
-> In 2–3 sentences: What problem does your project solve? Who experiences this problem?
+Semiconductor fabs lose significant yield and revenue when wafer defects are detected too late. Manufacturing teams work with high-volume sensor data and wafer maps, but the signal-to-noise ratio is high and the process of identifying root causes is slow, manual, and inconsistent.
 
-[Describe the real-world problem your project addresses. Be specific about who the user is and what pain point they face.]
+This creates operational pressure for quality engineers, process analysts, and production leaders who need faster visibility into which wafers, tool conditions, or process parameters are likely to cause failures before they escalate.
 
 ---
 
 ## 💡 Solution
 
-> In 2–3 sentences: What did you build? How does it solve the problem above?
+YieldSentinel AI is an AI-powered wafer intelligence platform that combines predictive modeling, explainability, and a modern dashboard to help fabs detect risky wafers early and understand why they fail. It predicts pass/fail outcomes from sensor data, identifies the key contributing features using SHAP-based interpretability, and surfaces suspicious defect patterns and likely root causes for actionable investigation.
 
-[Describe your solution clearly. Explain the core mechanism — what makes it work.]
+The solution turns complex manufacturing telemetry into a decision-ready view for engineers and managers.
 
 ---
 
 ## ✨ Key Features
 
-- **Feature 1:** [Brief description — e.g., "Real-time anomaly detection using watsonx.ai"]
-- **Feature 2:** [Brief description]
-- **Feature 3:** [Brief description]
-- **Feature 4:** [Optional]
-- **Feature 5:** [Optional]
+- **Wafer-level failure prediction:** ML-based pass/fail inference using semiconductor sensor inputs.
+- **Batch analytics:** CSV upload workflow for screening multiple wafers and summarizing production risk.
+- **Root-cause intelligence:** Top contributing process features highlighted to support investigations.
+- **Defect pattern visualization:** Clustering of defect signatures and risk-prone wafer regions.
+- **AI assistant interface:** Conversational support for interpreting yield trends and operational questions.
 
 ---
 
@@ -45,51 +43,120 @@
 
 | Category | Technologies |
 |---|---|
-| **Languages** | [e.g., Python, TypeScript] |
-| **Frameworks** | [e.g., FastAPI, React] |
-| **IBM Technologies** | [e.g., watsonx.ai, IBM Bob, IBM Cloud] |
-| **Databases** | [e.g., PostgreSQL, Redis] |
-| **Other** | [e.g., Docker, GitHub Actions] |
+| **Languages** | Python, TypeScript |
+| **Frameworks** | FastAPI, Next.js, React |
+| **IBM Technologies** | IBM Bob AI Hackathon, IBM-aligned manufacturing intelligence workflow |
+| **Databases** | Local model artifacts; no persistent production DB in the prototype |
+| **Other** | XGBoost, SHAP, OpenRouter AI, Framer Motion |
 
 ---
 
 ## 📁 Repository Structure
 
-```
-├── src/                  # All source code
-├── docs/                 # Written documentation
-│   ├── problem-statement.md
-│   ├── solution-overview.md
+```text
+bob-ai-hackathon-ThinkTankX/
+├── README.md                    # Project overview and run instructions
+├── CONTRIBUTING.md              # Contribution guidelines
+├── submission.yaml              # Hackathon submission metadata
+├── setup.ps1                    # One-time Windows setup
+├── start.ps1                    # Start backend and frontend together
+├── .github/
+│   ├── ISSUE_TEMPLATE/
+│   └── workflows/
+├── src/
+│   ├── README.md                # Source-code overview
+│   ├── .env.example              # Environment variable template
+│   ├── YieldSentinel_Improved_Model.ipynb
+│   ├── backend/
+│   │   ├── main.py               # FastAPI application
+│   │   ├── train_model.py        # Optional model training script
+│   │   ├── requirements.txt      # Python dependencies
+│   │   ├── uci-secom.csv         # Training/demo dataset
+│   │   ├── yieldsentinel_best_model.pkl
+│   │   └── README.md
+│   └── frontend/
+│       ├── app/                  # Pages, layouts, API routes, and UI
+│       ├── public/               # Static assets
+│       ├── src/                  # Frontend shared code
+│       ├── package.json          # Node.js dependencies and scripts
+│       ├── package-lock.json
+│       ├── next.config.mjs
+│       ├── tailwind.config.ts
+│       └── tsconfig.json
+├── docs/
 │   ├── architecture.md
-│   └── setup-guide.md
-├── demo/                 # Demo artifacts
-│   ├── screenshots/      # App screenshots
-│   └── demo-video-link.txt  # Link to demo video
-├── presentation/         # Slide deck
-└── submission.yaml       # Structured submission metadata
+│   ├── problem-statement.md
+│   ├── setup-guide.md
+│   ├── solution-overview.md
+│   └── template-guide.md
+├── demo/
+│   ├── demo-video-link.txt
+│   ├── live-demo-url.txt
+│   └── screenshots/
+├── presentation/
+│   └── README.md
+└── .gitignore
 ```
+
+Generated or local-only folders such as `src/backend/.venv/`,
+`src/frontend/node_modules/`, `src/frontend/.next/`, Python caches, and
+`src/frontend/.env.local` are intentionally excluded from the repository tree.
 
 ---
 
 ## ⚡ How to Run
 
-> **Copy these exact steps from your [`docs/setup-guide.md`](docs/setup-guide.md)**
+### Prerequisites
 
-```bash
-# 1. Clone the repo
-git clone https://github.com/[your-repo].git
-cd [your-repo]
+- Python 3.11 or newer
+- Node.js 18 or newer
+- npm
 
-# 2. Install dependencies
-[your install command here]
+### Windows quick start
 
-# 3. Configure environment
-cp .env.example .env
-# Edit .env with your values
+Run this once from the repository root:
 
-# 4. Run the project
-[your run command here]
+```powershell
+.\setup.ps1
 ```
+
+Then start both services with one command:
+
+```powershell
+.\start.ps1
+```
+
+This opens the backend at `http://localhost:8000` and the frontend at `http://localhost:3000` in separate PowerShell windows.
+
+### Manual start
+
+Install dependencies once:
+
+```powershell
+cd src/backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+cd ..\frontend
+npm install
+```
+
+For normal runs, start the backend and frontend in separate terminals:
+
+```powershell
+cd src/backend
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+```
+
+```powershell
+cd src/frontend
+npm run dev
+```
+
+The trained model is already included at `src/backend/yieldsentinel_best_model.pkl`. Run `python train_model.py --data uci-secom.csv` only when you want to retrain it.
+
+### AI assistant configuration
+
+The optional frontend chatbot reads `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` from `src/frontend/.env.local`. The dashboard and backend work without the chatbot key.
 
 ---
 
@@ -100,22 +167,20 @@ cp .env.example .env
 | 📹 Demo Video | [See demo/demo-video-link.txt](demo/demo-video-link.txt) |
 | 🌐 Live Demo | [See demo/live-demo-url.txt](demo/live-demo-url.txt) |
 | 🖼️ Screenshots | [See demo/screenshots/](demo/screenshots/) |
-| 📊 Presentation | [See presentation/slides.pdf](presentation/) |
+| 📊 Presentation | [See presentation/](presentation/) |
 
 ---
 
 ## ⚠️ Known Limitations
 
-> Be honest — judges appreciate transparency over overclaiming.
-
-- [Limitation 1: e.g., "Authentication is mocked — not production-ready"]
-- [Limitation 2: e.g., "Only tested on Chrome"]
-- [Limitation 3: e.g., "Feature X is scaffolded but not fully implemented"]
+- The current prototype relies on a local model artifact and demo dataset rather than a production manufacturing data pipeline.
+- No persistent database, user auth, or enterprise-grade deployment stack is included in this version.
+- The experience is designed for demo and proof-of-concept validation rather than full-scale production rollout.
 
 ---
 
 ## 🏅 What We're Most Proud Of
 
-[Tell the judges what part of your submission is strongest and worth paying close attention to.]
+The strongest part of this project is the way it combines predictive intelligence with operational clarity. Instead of only showing a pass/fail label, the system explains the biggest contributors, visualizes defect patterns, and helps engineers make faster, more informed decisions in wafer quality investigations.
 
 ---
