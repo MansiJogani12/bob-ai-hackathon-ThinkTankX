@@ -112,25 +112,69 @@ export default function WaferPage() {
       try {
         const text = evt.target?.result as string;
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-        if (lines.length < 2) return;
+        if (lines.length === 0) return;
 
-        const headers = lines[0].split(',');
-        const dataRow = lines[1].split(',');
+        const firstLineCells = lines[0].split(',');
+        const isFirstLineHeader = firstLineCells.some(cell => isNaN(Number(cell.trim())));
+
+        const headers = isFirstLineHeader ? firstLineCells.map(h => h.trim().replace(/^["']|["']$/g, '')) : [];
+        const dataRowCells = (isFirstLineHeader && lines.length > 1 ? lines[1] : lines[0])
+          .split(',')
+          .map(c => c.trim().replace(/^["']|["']$/g, ''));
 
         const extracted: Record<string, number> = {};
-        featureNames.forEach(f => {
-          const idx = headers.indexOf(f);
-          if (idx !== -1) {
-            const num = parseFloat(dataRow[idx]);
-            extracted[f] = isNaN(num) ? 0 : num;
-          } else {
-            extracted[f] = 0;
+
+        featureNames.forEach((f, idx) => {
+          let valNum: number | null = null;
+
+          // 1. Match by header name (exact, case-insensitive, or numeric digits)
+          if (headers.length > 0) {
+            const hIdx = headers.findIndex(h =>
+              h === f ||
+              h.toLowerCase() === f.toLowerCase() ||
+              (h.replace(/[^0-9]/g, '') !== '' && h.replace(/[^0-9]/g, '') === f.replace(/[^0-9]/g, ''))
+            );
+            if (hIdx !== -1 && dataRowCells[hIdx] !== undefined) {
+              const parsed = parseFloat(dataRowCells[hIdx]);
+              if (!isNaN(parsed)) valNum = parsed;
+            }
           }
+
+          // 2. Match by numeric column index or position
+          if (valNum === null) {
+            const numericId = parseInt(f.replace(/[^0-9]/g, ''), 10);
+            const targetCol = !isNaN(numericId) && numericId < dataRowCells.length ? numericId : idx;
+            if (dataRowCells[targetCol] !== undefined) {
+              const parsed = parseFloat(dataRowCells[targetCol]);
+              if (!isNaN(parsed)) valNum = parsed;
+            }
+          }
+
+          extracted[f] = valNum !== null ? valNum : 0;
         });
 
         setVals(extracted);
+
+        // Auto-run inference immediately on extracted CSV parameters
+        fetch(`${BACKEND}/predict`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sensors: extracted }),
+        })
+          .then(r => r.ok ? r.json() : null)
+          .then(data => {
+            if (data) {
+              setFailProb(data.fail_probability);
+              setPassProb(data.pass_probability);
+              setPrediction(data.prediction);
+              setLatencyMs(data.latency_ms ?? "--");
+              setShap(data.top_shap_features ?? []);
+              setRunTick(t => t + 1);
+            }
+          })
+          .catch(() => {});
       } catch (err) {
-        console.error("Failed to parse CSV file.");
+        console.error("Failed to parse CSV file.", err);
       }
     };
     reader.readAsText(file);
