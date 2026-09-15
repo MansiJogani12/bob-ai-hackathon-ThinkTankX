@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getModelInfo } from "../../../src/services/api";
 import { useAppContext } from "../../../src/lib/store";
@@ -218,6 +218,19 @@ export default function WaferPage() {
         setError(err instanceof Error ? err.message : "Unable to load model features.");
       });
   }, [selectedWaferSensors]);
+  const displayFeatureNames = useMemo(() => {
+    return [...featureNames].sort((a, b) => {
+      const valA = Math.abs(vals[a] ?? 0);
+      const valB = Math.abs(vals[b] ?? 0);
+      if (valA > 0 && valB === 0) return -1;
+      if (valA === 0 && valB > 0) return 1;
+      return valB - valA;
+    });
+  }, [featureNames, vals]);
+
+  const nonZeroCount = useMemo(() => {
+    return Object.values(vals).filter(v => Math.abs(v) > 0.001).length;
+  }, [vals]);
   const [running,    setRunning]    = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [prediction, setPrediction] = useState<string | null>(null);
@@ -397,7 +410,7 @@ export default function WaferPage() {
               <span style={{ padding: "4px 10px", borderRadius: 4, background: "rgba(245,158,11,0.1)",
                 border: "1px solid rgba(245,158,11,0.3)", color: "#fbbf24",
                 fontSize: "0.6875rem", fontFamily: "ui-monospace,monospace", fontWeight: 500 }}>
-                Active: 562 Features
+                Active: {nonZeroCount > 0 ? `${nonZeroCount} Active Features` : "562 Features"}
               </span>
             </div>
 
@@ -455,7 +468,7 @@ export default function WaferPage() {
                   Connecting to backend...
                 </div>
               )}
-              {featureNames.map(f => {
+              {displayFeatureNames.map(f => {
                 const v = vals[f] ?? 0;
                 const isDrift = Math.abs(v) > 2.5;
                 const sigmaLabel = v === 0 ? "NOMINAL" : `${v > 0 ? "+" : ""}${v.toFixed(2)}σ`;
