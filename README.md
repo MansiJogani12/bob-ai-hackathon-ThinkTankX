@@ -8,7 +8,7 @@
 |---|---|
 | **Team Name** | ThinkTankX |
 | **Track** | AI |
-| **Team Lead** | Yahvi Tanna - 24cs100@charusat.edu.in |
+| **Team Lead** | Yashvi Tanna - 24cs100@charusat.edu.in |
 | **Members** | Mansi Jogani, Khushi Undhad, Priyanshu Macwan |
 
 ---
