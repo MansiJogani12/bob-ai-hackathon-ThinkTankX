@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { getModelInfo } from "../../../src/services/api";
 import { useAppContext } from "../../../src/lib/store";
 
-const BACKEND = "http://127.0.0.1:8000";
+const BACKEND = (process.env.NEXT_PUBLIC_YIELDSENTINEL_BACKEND_URL ?? process.env.YIELDSENTINEL_BACKEND_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
 
 /* Ã¢â€â‚¬Ã¢â€â‚¬ Sensor definitions (real SECOM column indices) Ã¢â€â‚¬Ã¢â€â‚¬ */
 // Features loaded dynamically from /model-info

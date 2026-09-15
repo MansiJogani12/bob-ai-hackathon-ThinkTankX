@@ -109,7 +109,7 @@ function CheckRow({ label, badge, badgeColor = "rgba(255,255,255,0.08)", badgeTe
   );
 }
 
-const BACKEND = "http://127.0.0.1:8000";
+const BACKEND = (process.env.NEXT_PUBLIC_YIELDSENTINEL_BACKEND_URL ?? process.env.YIELDSENTINEL_BACKEND_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
 
 /* ───────────────────────────────────────────────── */
 
