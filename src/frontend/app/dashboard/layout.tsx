@@ -226,12 +226,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div style={{ marginBottom: 24, padding: "8px 12px 0" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{
-                fontFamily: "ui-monospace,SFMono-Regular,Menlo,monospace",
-                fontSize: "0.8125rem", letterSpacing: "0.1em", fontWeight: 800,
-                color: "#f59e0b",
-                textShadow: "0 0 10px rgba(245,158,11,0.4)",
+                fontFamily: "Inter,system-ui,sans-serif",
+                fontSize: "0.95rem", letterSpacing: "-0.01em", fontWeight: 800,
+                color: "#fff",
+                display: "flex", alignItems: "center", gap: 6,
               }}>
-                YIELD//INTELLIGENCE
+                YieldSentinel <span style={{ color: "#f59e0b" }}>AI</span>
               </span>
 
             </div>

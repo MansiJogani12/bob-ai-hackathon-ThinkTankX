@@ -104,13 +104,12 @@ export default function RegisterPage() {
       {/* Brand watermark top-left */}
       <Link href="/" style={{
         position: "fixed", top: 20, left: 28,
-        fontFamily: "ui-monospace, monospace",
-        fontSize: "0.8125rem", letterSpacing: "0.1em", fontWeight: 800,
-        color: "#f59e0b",
-        textShadow: "0 0 10px rgba(245,158,11,0.4)",
+        fontSize: "0.95rem", letterSpacing: "-0.01em", fontWeight: 800,
+        color: "#fff",
         textDecoration: "none",
+        display: "inline-block",
       }}>
-        YIELD<span style={{ color: "rgba(245,158,11,0.45)" }}>//</span>INTELLIGENCE
+        YieldSentinel <span style={{ color: "#f59e0b" }}>AI</span>
       </Link>
 
       {/* Card */}

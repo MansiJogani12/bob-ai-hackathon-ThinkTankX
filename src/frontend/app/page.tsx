@@ -247,8 +247,8 @@ function Navbar({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
       }}
     >
       {/* Logo */}
-      <div style={{ fontWeight: 800, fontSize: "0.82rem", letterSpacing: "0.04em", color: "var(--text-primary)", marginRight: "auto", userSelect: "none" }}>
-        YIELD<span style={{ color: "var(--text-secondary)" }}>//</span>INTELLIGENCE
+      <div style={{ fontWeight: 800, fontSize: "0.95rem", letterSpacing: "-0.01em", color: "var(--text-primary)", marginRight: "auto", userSelect: "none" }}>
+        YieldSentinel <span style={{ color: "var(--gold)" }}>AI</span>
       </div>
 
       {/* Nav links */}
@@ -1309,8 +1309,8 @@ function Footer() {
     <footer style={{ borderTop: "1px solid var(--border)", background: "var(--bg-base)", padding: "clamp(36px,5vw,56px) clamp(28px,5vw,72px)" }}>
       <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", flexWrap: "wrap", gap: 32, justifyContent: "space-between", alignItems: "flex-start" }}>
         <div style={{ maxWidth: 220 }}>
-          <div style={{ fontWeight: 800, fontSize: "0.82rem", letterSpacing: "0.04em", color: "var(--text-primary)", marginBottom: 10 }}>
-            YIELD<span style={{ color: "var(--text-secondary)" }}>//</span>INTELLIGENCE
+          <div style={{ fontWeight: 800, fontSize: "0.95rem", letterSpacing: "-0.01em", color: "var(--text-primary)", marginBottom: 10 }}>
+            YieldSentinel <span style={{ color: "var(--gold)" }}>AI</span>
           </div>
           <p style={{ fontSize: "0.7rem", color: "var(--text-secondary)", lineHeight: 1.65 }}>
             Semiconductor yield intelligence powered by AI. Find failures before they cost millions.
