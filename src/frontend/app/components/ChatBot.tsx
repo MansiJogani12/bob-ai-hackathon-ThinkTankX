@@ -126,13 +126,19 @@ export default function ChatBot() {
               }}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="3" fill="#080808" />
-                <path
-                  d="M12 2v3M12 19v3M2 12h3M19 12h3M5.636 5.636l2.121 2.121M16.243 16.243l2.121 2.121M5.636 18.364l2.121-2.121M16.243 7.757l2.121-2.121"
-                  stroke="#080808"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                />
+                {/* Head */}
+                <rect x="3" y="7" width="18" height="13" rx="2.5" stroke="#080808" strokeWidth="2" />
+                {/* Antenna */}
+                <line x1="12" y1="2" x2="12" y2="7" stroke="#080808" strokeWidth="2" strokeLinecap="round" />
+                <circle cx="12" cy="2" r="1.2" fill="#080808" />
+                {/* Eyes */}
+                <circle cx="8.5" cy="13" r="1.6" fill="#080808" />
+                <circle cx="15.5" cy="13" r="1.6" fill="#080808" />
+                {/* Mouth */}
+                <path d="M8.5 16.5 Q12 18.5 15.5 16.5" stroke="#080808" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+                {/* Ear bolts */}
+                <line x1="3" y1="12" x2="1" y2="12" stroke="#080808" strokeWidth="1.8" strokeLinecap="round" />
+                <line x1="21" y1="12" x2="23" y2="12" stroke="#080808" strokeWidth="1.8" strokeLinecap="round" />
               </svg>
             </div>
 
@@ -399,15 +405,21 @@ export default function ChatBot() {
             />
           </svg>
         ) : (
-          /* Spark / AI icon when closed */
+          /* Robot / bot face icon when closed */
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="12" r="3" fill="currentColor" />
-            <path
-              d="M12 2v3M12 19v3M2 12h3M19 12h3M5.636 5.636l2.121 2.121M16.243 16.243l2.121 2.121M5.636 18.364l2.121-2.121M16.243 7.757l2.121-2.121"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-            />
+            {/* Head */}
+            <rect x="3" y="7" width="18" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.8" />
+            {/* Antenna */}
+            <line x1="12" y1="2" x2="12" y2="7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            <circle cx="12" cy="2" r="1.2" fill="currentColor" />
+            {/* Eyes */}
+            <circle cx="8.5" cy="13" r="1.6" fill="currentColor" />
+            <circle cx="15.5" cy="13" r="1.6" fill="currentColor" />
+            {/* Mouth */}
+            <path d="M8.5 16.5 Q12 18.5 15.5 16.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" fill="none" />
+            {/* Ear bolts */}
+            <line x1="3" y1="12" x2="1" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            <line x1="21" y1="12" x2="23" y2="12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
           </svg>
         )}
       </button>
