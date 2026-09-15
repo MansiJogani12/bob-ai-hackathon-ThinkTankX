@@ -390,7 +390,12 @@ function HeroSection() {
                 onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")}>
                 Launch Analyzer →
               </a>
-              <button style={{ background: "transparent", color: "var(--text-secondary)", borderRadius: 6, fontSize: "0.72rem", fontWeight: 500, padding: "10px 20px", border: "1px solid var(--border-card)", cursor: "pointer", transition: "color 0.18s" }}>
+              <button
+                onClick={() => {
+                  document.getElementById("overview")?.scrollIntoView({ behavior: "smooth" });
+                }}
+                style={{ background: "transparent", color: "var(--text-secondary)", borderRadius: 6, fontSize: "0.72rem", fontWeight: 500, padding: "10px 20px", border: "1px solid var(--border-card)", cursor: "pointer", transition: "color 0.18s" }}
+              >
                 See How It Works ↓
               </button>
             </div>
