@@ -1,8 +1,10 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "../../../src/lib/store";
 import { getDashboard, type DashboardResponse } from "../../../src/services/api";
+import { supabase } from "../../../src/lib/supabase";
+import { saveAnalysis, getAnalyses, deleteAnalysis, type Analysis } from "../../../src/lib/analysisDb";
 
 /* ── inline styles to avoid any CSS conflicts ── */
 const S = {
@@ -109,16 +111,36 @@ function CheckRow({ label, badge, badgeColor = "rgba(255,255,255,0.08)", badgeTe
 
 const BACKEND = "http://127.0.0.1:8000";
 
-/* ─────────────────────────────────────────────────── */
+/* ───────────────────────────────────────────────── */
+
 export default function BatchPage() {
-  const { setBatchResult, batchResult, setBatchWaferSensors } = useAppContext();
+  const { setBatchResult, batchResult, setBatchWaferSensors, setActiveAnalysisId } = useAppContext();
   const [latency, setLatency] = useState(14);
   const [running, setRunning] = useState<"idle" | "running" | "done">("idle");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileInfo, setFileInfo] = useState<{ name: string; rows: string; size: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [saveToast, setSaveToast] = useState<"saving" | "saved" | "error" | null>(null);
+  const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /* ── Saved datasets state ── */
+  const [savedAnalyses, setSavedAnalyses] = useState<Analysis[]>([]);
+  const [savedLoading, setSavedLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(null);
+
+  const loadSaved = useCallback(async () => {
+    setSavedLoading(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) { setSavedLoading(false); return; }
+    const list = await getAnalyses(session.user.id);
+    setSavedAnalyses(list);
+    setSavedLoading(false);
+  }, []);
+
+  useEffect(() => { loadSaved(); }, [loadSaved]);
 
   /* Fetch dashboard KPIs for the bottom strip (no model needed) */
   useEffect(() => {
@@ -188,9 +210,57 @@ export default function BatchPage() {
       }
 
       const data = await res.json();
-      setBatchResult(data);           // â† save into global context
+      setBatchResult(data);           // save into global context
       setRunning("done");
       setTimeout(() => setRunning("idle"), 1800);
+
+      /* ── Save analysis to Supabase (non-blocking) ── */
+      void (async () => {
+        try {
+          setSaveToast("saving");
+          const { data: sessionData } = await supabase.auth.getSession();
+          const userId = sessionData?.session?.user?.id;
+          if (!userId) { setSaveToast(null); return; }
+
+          const [rcRes, dpRes, asRes, miRes] = await Promise.allSettled([
+            fetch(`${BACKEND}/root-causes`).then(r => r.ok ? r.json() : null),
+            fetch(`${BACKEND}/defect-patterns`).then(r => r.ok ? r.json() : null),
+            fetch(`${BACKEND}/analysis-summary`).then(r => r.ok ? r.json() : null),
+            fetch(`${BACKEND}/model-info`).then(r => r.ok ? r.json() : null),
+          ]);
+
+          const rootCauses = rcRes.status === "fulfilled" ? rcRes.value as Record<string, unknown> | null : null;
+          const defectPatterns = dpRes.status === "fulfilled" ? dpRes.value as Record<string, unknown> | null : null;
+          const analysisSummary = asRes.status === "fulfilled" ? asRes.value as Record<string, unknown> | null : null;
+          const modelInfo = miRes.status === "fulfilled" ? miRes.value as Record<string, unknown> | null : null;
+
+          const { data: saved, error: saveErr } = await saveAnalysis({
+            userId,
+            datasetName: uploadedFile.name,
+            batchResult: data as Record<string, unknown>,
+            rootCauses,
+            defectPatterns,
+            analysisSummary,
+            modelInfo,
+          });
+
+          if (saved) {
+            setActiveId(saved.id);
+            setActiveAnalysisId(saved.id);
+            await loadSaved();
+            setSaveToast("saved");
+          } else {
+            setSaveToast("error");
+            // Show the actual Supabase error so the user knows what to fix
+            if (saveErr) setSaveErrorMsg(saveErr);
+          }
+          setTimeout(() => { setSaveToast(null); setSaveErrorMsg(null); }, 6000);
+        } catch (e) {
+          setSaveToast("error");
+          setSaveErrorMsg(e instanceof Error ? e.message : String(e));
+          setTimeout(() => { setSaveToast(null); setSaveErrorMsg(null); }, 6000);
+        }
+      })();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
@@ -244,6 +314,37 @@ export default function BatchPage() {
           marginBottom: 16,
         }}>
           ⚠ {error}
+        </div>
+      )}
+
+      {/* ── Save toast ── */}
+      {saveToast && (
+        <div style={{
+          padding: "10px 14px", borderRadius: 6, marginBottom: 16,
+          background: saveToast === "saved"
+            ? "rgba(16,89,52,0.4)"
+            : saveToast === "saving"
+            ? "rgba(30,50,20,0.4)"
+            : "rgba(127,29,29,0.4)",
+          border: `1px solid ${saveToast === "saved" ? "rgba(16,185,129,0.4)" : saveToast === "saving" ? "rgba(245,158,11,0.3)" : "rgba(239,68,68,0.4)"}`,
+          color: saveToast === "saved" ? "#6ee7b7" : saveToast === "saving" ? "#fbbf24" : "#fca5a5",
+          fontFamily: "ui-monospace,monospace", fontSize: "0.65rem", letterSpacing: "0.04em",
+          display: "flex", alignItems: "center", gap: 8,
+        }}>
+          {saveToast === "saving" && "⟳ Saving analysis to history..."}
+          {saveToast === "saved" && "✓ Analysis saved to history — visible in Saved Datasets below"}
+          {saveToast === "error" && (
+            <span>
+              ⚠ Could not save to history
+              {saveErrorMsg && (
+                <span style={{ display: "block", marginTop: 4, fontSize: "0.6rem", opacity: 0.8 }}>
+                  {saveErrorMsg.includes("relation") || saveErrorMsg.includes("does not exist")
+                    ? 'Table missing — run supabase_migrations.sql in your Supabase SQL Editor first'
+                    : saveErrorMsg}
+                </span>
+              )}
+            </span>
+          )}
         </div>
       )}
 
@@ -403,7 +504,7 @@ export default function BatchPage() {
                   <motion.span key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     style={{ display: "flex", alignItems: "center", gap: 8, color: "#000", fontWeight: 700 }}>
                     <span>PREDICTION COMPLETE</span>
-                    <span style={{ fontSize: "1rem" }}>✓</span>
+                    <span style={{ fontSize: "1rem" }}>✔</span>
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -444,7 +545,7 @@ export default function BatchPage() {
             </p>
 
             {batchResult ? (
-              /* ── Real results: 2×2 KPI grid ── */
+              /* ── Real results: 2x2 KPI grid ── */
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {[
                   { label: "Total Wafers", value: String(batchResult.total_wafers), color: "#fff", bg: S.surface, border: S.cardBorder },
@@ -467,7 +568,7 @@ export default function BatchPage() {
                 <StatRow
                   label="Input Schema Match"
                   value={<span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    100% Validated <span style={{ color: "#34d399", fontSize: "0.75rem" }}>✓</span>
+                    100% Validated <span style={{ color: "#34d399", fontSize: "0.75rem" }}>✔</span>
                   </span>}
                   right={<>
                     <span style={{ color: "#34d399", fontSize: "0.75rem", fontWeight: 600,
@@ -540,6 +641,156 @@ export default function BatchPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* ── Saved Datasets Panel ── */}
+      <div style={{ marginTop: 28, background: S.card, borderRadius: 12,
+        border: `1px solid ${S.cardBorder}`, overflow: "hidden",
+        boxShadow: "0 20px 25px -5px rgba(0,0,0,0.5)" }}>
+
+        {/* Panel header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px 24px", borderBottom: `1px solid ${S.cardBorder}` }}>
+          <div>
+            <h2 style={{ fontSize: "1.125rem", fontWeight: 600, color: "#fff", margin: 0 }}>
+              Saved Datasets
+            </h2>
+            <p style={{ fontSize: "0.69rem", color: S.textMuted, marginTop: 2 }}>
+              Your uploaded analyses — click Load to make one active for all analysis pages
+            </p>
+          </div>
+          <button onClick={loadSaved} style={{
+            padding: "5px 12px", borderRadius: 6, fontFamily: "monospace",
+            fontSize: "0.625rem", fontWeight: 700, letterSpacing: "0.08em",
+            background: "transparent", color: S.amber, border: `1px solid rgba(229,155,56,0.35)`,
+            cursor: "pointer", transition: "all 0.15s",
+          }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(229,155,56,0.1)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+          >
+            ↻ REFRESH
+          </button>
+        </div>
+
+        {/* Loading */}
+        {savedLoading && (
+          <div style={{ padding: "24px", fontFamily: "monospace", fontSize: "0.69rem",
+            color: S.textMuted, textAlign: "center" }}>
+            Loading saved datasets...
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!savedLoading && savedAnalyses.length === 0 && (
+          <div style={{ padding: "32px 24px", textAlign: "center",
+            fontFamily: "monospace", fontSize: "0.69rem", color: S.textMuted, letterSpacing: "0.06em" }}>
+            No saved datasets yet — run a batch prediction to save your first analysis
+          </div>
+        )}
+
+        {/* Dataset rows */}
+        {!savedLoading && savedAnalyses.length > 0 && (
+          <>
+            {/* Column headings */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 140px 80px 80px 100px 200px",
+              padding: "8px 24px", background: "rgba(0,0,0,0.3)",
+              borderBottom: `1px solid ${S.cardBorder}`,
+              fontFamily: "monospace", fontSize: "0.5625rem", textTransform: "uppercase",
+              letterSpacing: "0.1em", color: "#52525b" }}>
+              <span>Dataset</span>
+              <span>Date</span>
+              <span>Wafers</span>
+              <span>Yield</span>
+              <span>Status</span>
+              <span style={{ textAlign: "right" }}>Actions</span>
+            </div>
+
+            <div style={{ maxHeight: 340, overflowY: "auto" }}>
+              {savedAnalyses.map((a) => {
+                const isActive = activeId === a.id;
+                const yieldStr = a.yield_percentage != null ? `${a.yield_percentage.toFixed(1)}%` : "--";
+                const dateStr = new Date(a.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "2-digit" });
+                return (
+                  <div key={a.id}
+                    style={{ display: "grid", gridTemplateColumns: "1fr 140px 80px 80px 100px 200px",
+                      padding: "11px 24px", borderBottom: `1px solid rgba(35,35,42,0.5)`,
+                      fontFamily: "monospace", fontSize: "0.75rem",
+                      background: isActive ? "rgba(229,155,56,0.06)" : "transparent",
+                      borderLeft: isActive ? `2px solid ${S.amber}` : "2px solid transparent",
+                      transition: "background 0.15s", alignItems: "center" }}
+                    onMouseEnter={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "rgba(255,255,255,0.02)"; }}
+                    onMouseLeave={e => { if (!isActive) (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                  >
+                    <span style={{ color: "#e4e4e7", fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingRight: 8 }}
+                      title={a.dataset_name}>{a.dataset_name}</span>
+                    <span style={{ color: "#71717a" }}>{dateStr}</span>
+                    <span style={{ color: "#a1a1aa" }}>{a.total_records ?? "--"}</span>
+                    <span style={{ color: a.yield_percentage != null && a.yield_percentage >= 90 ? "#34d399" : "#f87171" }}>{yieldStr}</span>
+                    <span>
+                      {isActive
+                        ? <span style={{ fontSize: "0.5625rem", padding: "2px 8px", borderRadius: 4,
+                            background: "rgba(229,155,56,0.15)", color: S.amber,
+                            border: `1px solid rgba(229,155,56,0.4)`, fontWeight: 700 }}>ACTIVE</span>
+                        : <span style={{ fontSize: "0.5625rem", color: "#52525b" }}>—</span>}
+                    </span>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+                      <button
+                        onClick={async () => {
+                            /* Load this analysis into global batchResult */
+                            const ps = a.prediction_summary as Record<string, unknown> | null;
+                            if (ps) {
+                              setBatchResult(ps as unknown as Parameters<typeof setBatchResult>[0]);
+                            }
+                          setActiveId(a.id);
+                          setActiveAnalysisId(a.id);
+                        }}
+                        disabled={isActive}
+                        style={{
+                          padding: "4px 12px", borderRadius: 4, fontFamily: "monospace",
+                          fontSize: "0.5625rem", fontWeight: 700, letterSpacing: "0.06em",
+                          background: isActive ? "rgba(229,155,56,0.15)" : "transparent",
+                          color: isActive ? S.amber : "#a1a1aa",
+                          border: `1px solid ${isActive ? "rgba(229,155,56,0.4)" : "rgba(63,63,70,0.6)"}`,
+                          cursor: isActive ? "default" : "pointer", transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = "rgba(229,155,56,0.1)"; e.currentTarget.style.color = S.amber; e.currentTarget.style.borderColor = "rgba(229,155,56,0.4)"; } }}
+                        onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#a1a1aa"; e.currentTarget.style.borderColor = "rgba(63,63,70,0.6)"; } }}
+                      >
+                        {isActive ? "LOADED" : "LOAD"}
+                      </button>
+                      <button
+                        disabled={deletingId === a.id}
+                        onClick={async () => {
+                          if (!confirm(`Delete analysis "${a.dataset_name}"? This cannot be undone.`)) return;
+                          setDeletingId(a.id);
+                          const { data: { session } } = await supabase.auth.getSession();
+                          if (!session?.user?.id) { setDeletingId(null); return; }
+                          const ok = await deleteAnalysis(session.user.id, a.id);
+                          if (ok) {
+                            if (activeId === a.id) { setActiveId(null); setActiveAnalysisId(null); }
+                            await loadSaved();
+                          }
+                          setDeletingId(null);
+                        }}
+                        style={{
+                          padding: "4px 12px", borderRadius: 4, fontFamily: "monospace",
+                          fontSize: "0.5625rem", fontWeight: 700, letterSpacing: "0.06em",
+                          background: "transparent", color: "#71717a",
+                          border: "1px solid rgba(63,63,70,0.6)",
+                          cursor: deletingId === a.id ? "not-allowed" : "pointer", transition: "all 0.15s",
+                        }}
+                        onMouseEnter={e => { if (deletingId !== a.id) { e.currentTarget.style.background = "rgba(239,68,68,0.12)"; e.currentTarget.style.color = "#f87171"; e.currentTarget.style.borderColor = "rgba(239,68,68,0.4)"; } }}
+                        onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#71717a"; e.currentTarget.style.borderColor = "rgba(63,63,70,0.6)"; }}
+                      >
+                        {deletingId === a.id ? "..." : "DELETE"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
       </div>
 
       {/* ── Wafer Predictions Table (appears after batch run) ── */}
@@ -649,8 +900,8 @@ export default function BatchPage() {
               ? `${dashboard.current_yield_pct.toFixed(1)}%`
               : "--",
             sub: batchResult
-              ? `↑ ${batchResult.pass_count} passed`
-              : "↑ From dashboard",
+              ? `▲ ${batchResult.pass_count} passed`
+              : "▲ From dashboard",
             subColor: "#34d399", dot: "#10b981", hoverColor: "#6ee7b7",
           },
           {
@@ -713,10 +964,10 @@ export default function BatchPage() {
             </div>
             <div style={{ fontFamily: "monospace", fontSize: "0.69rem", color: m.subColor, marginTop: 4,
               display: "flex", alignItems: "center", gap: 4 }}>
-              {m.sub.startsWith("↑") && (
-                <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>↑</motion.span>
+              {m.sub.startsWith("▲") && (
+                <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>▲</motion.span>
               )}
-              {m.sub.replace("↑ ", "")}
+              {m.sub.replace("▲ ", "")}
             </div>
           </div>
         ))}
@@ -728,18 +979,17 @@ export default function BatchPage() {
 function StatRow({ label, value, right }: { label: string; value: React.ReactNode; right: React.ReactNode }) {
   return (
     <div style={{ padding: "14px", borderRadius: 8, background: "#0E0E11",
-      border: "1px solid #23232A", display: "flex", alignItems: "center",
-      justifyContent: "space-between", cursor: "default", transition: "all 0.15s" }}
-      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "rgba(35,35,42,0.9)"; (e.currentTarget as HTMLElement).style.background = "#121217"; }}
-      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#23232A"; (e.currentTarget as HTMLElement).style.background = "#0E0E11"; }}>
-      <div>
-        <div style={{ fontFamily: "monospace", fontSize: "0.69rem", color: "#a1a1aa",
-          textTransform: "uppercase", marginBottom: 4 }}>{label}</div>
-        <div style={{ fontSize: "0.875rem", fontWeight: 600, color: "#f4f4f5" }}>{value}</div>
+      border: "1px solid #23232A", display: "flex", alignItems: "center", justifyContent: "space-between",
+      cursor: "default", transition: "all 0.2s" }}
+      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = "#52525b"; }}
+      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = "#23232A"; }}>
+      <span style={{ fontFamily: "monospace", fontSize: "0.69rem", color: "#a1a1aa" }}>{label}</span>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 2 }}>
+        <span style={{ fontFamily: "monospace", fontSize: "0.75rem", fontWeight: 600, color: "#e4e4e7" }}>
+          {value}
+        </span>
+        {right}
       </div>
-      <div style={{ textAlign: "right", fontFamily: "monospace" }}>{right}</div>
     </div>
   );
 }
-
-

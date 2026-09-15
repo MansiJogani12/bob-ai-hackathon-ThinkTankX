@@ -107,6 +107,33 @@ const NAV = [
       </svg>
     ),
   },
+  {
+    href: "/dashboard/history",
+    label: "Analysis History",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      </svg>
+    ),
+  },
+  {
+    href: "/dashboard/compare",
+    label: "Compare Analyses",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      </svg>
+    ),
+  },
+  {
+    href: "/dashboard/intelligence",
+    label: "Yield Intelligence",
+    icon: (
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" />
+      </svg>
+    ),
+  },
 ];
 
 /* ── Live latency ticker ── */

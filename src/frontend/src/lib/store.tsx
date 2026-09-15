@@ -57,6 +57,13 @@ interface StoreValue {
   setSelectedWaferSensors: (sensors: WaferSensors | null) => void;
 
   /**
+   * The Supabase analysis ID the user has selected for analysis pages.
+   * null = use the latest in-memory batchResult (current session behaviour).
+   */
+  activeAnalysisId: string | null;
+  setActiveAnalysisId: (id: string | null) => void;
+
+  /**
    * null  = first check not yet complete (sidebar shows amber "CONNECTING")
    * true  = /health returned 200
    * false = fetch failed or non-2xx
@@ -71,6 +78,8 @@ const StoreContext = createContext<StoreValue>({
   setBatchWaferSensors: () => {},
   selectedWaferSensors: null,
   setSelectedWaferSensors: () => {},
+  activeAnalysisId: null,
+  setActiveAnalysisId: () => {},
   isBackendOnline: null,
 });
 
@@ -80,6 +89,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [batchResult, setBatchResultState] = useState<BatchResult | null>(null);
   const [batchWaferSensors, setBatchWaferSensors] = useState<WaferSensors[]>([]);
   const [selectedWaferSensors, setSelectedWaferSensors] = useState<WaferSensors | null>(null);
+  const [activeAnalysisId, setActiveAnalysisId] = useState<string | null>(null);
   const [isBackendOnline, setIsBackendOnline] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -126,7 +136,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <StoreContext.Provider value={{ batchResult, setBatchResult, batchWaferSensors, setBatchWaferSensors, selectedWaferSensors, setSelectedWaferSensors, isBackendOnline }}>
+    <StoreContext.Provider value={{ batchResult, setBatchResult, batchWaferSensors, setBatchWaferSensors, selectedWaferSensors, setSelectedWaferSensors, activeAnalysisId, setActiveAnalysisId, isBackendOnline }}>
       {children}
     </StoreContext.Provider>
   );

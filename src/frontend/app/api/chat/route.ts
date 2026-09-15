@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getAnalyses } from "../../../src/lib/analysisDb";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Config
@@ -44,6 +45,24 @@ interface ModelInfo {
   scale_pos_weight: number;
 }
 
+interface RootCausesResponse {
+  causes?: {
+    label: string;
+    probability: number;
+    correlation: number;
+    deviation: string;
+  }[];
+}
+
+interface DefectPatternsResponse {
+  patterns?: {
+    label: string;
+    risk_level: string;
+    affected_lots: number;
+    top_correlation: string;
+  }[];
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Keyword detection — decides whether the question needs live data
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,6 +86,9 @@ function needsAnalysisData(msg: string): boolean {
     "hui", "hain", "hai", "ho gaye", "pass hui", "fail hui",
     "percentage", "kya hai", "batao", "bata", "show", "list",
     "probability", "chance",
+    // advanced RCA / patterns
+    "why", "root cause", "feature", "sensor", "pattern", "cluster",
+    "equipment", "compare", "trend", "risk", "improve", "issue"
   ];
   return dataKeywords.some((kw) => lower.includes(kw));
 }
@@ -108,6 +130,32 @@ async function fetchModelInfo(): Promise<ModelInfo | null> {
   }
 }
 
+async function fetchRootCauses(): Promise<RootCausesResponse | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/root-causes`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as RootCausesResponse;
+  } catch {
+    return null;
+  }
+}
+
+async function fetchDefectPatterns(): Promise<DefectPatternsResponse | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/defect-patterns`, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as DefectPatternsResponse;
+  } catch {
+    return null;
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Build the data context block injected as a system message
 // ─────────────────────────────────────────────────────────────────────────────
@@ -115,7 +163,10 @@ async function fetchModelInfo(): Promise<ModelInfo | null> {
 function buildDataContext(
   summary: AnalysisSummary | null,
   modelInfo: ModelInfo | null,
+  rootCauses: RootCausesResponse | null,
+  defectPatterns: DefectPatternsResponse | null,
   requestedWaferId: string | null,
+  savedAnalyses: any[] | null,
 ): string {
   const lines: string[] = [];
 
@@ -154,6 +205,24 @@ function buildDataContext(
       `Fail percentage: ${summary.fail_percentage}%`,
       `Threshold used: ${summary.threshold}`,
     );
+
+    // Root Causes
+    if (rootCauses?.causes && rootCauses.causes.length > 0) {
+      lines.push("", "Top Risk Features / Root Causes:");
+      rootCauses.causes.slice(0, 5).forEach((c, idx) => {
+        // Replacing "Sensor" with "Feature" if the backend returns "Sensor 103" but doesn't have evidence it's a sensor
+        const safeLabel = c.label.replace(/Sensor/g, "Feature");
+        lines.push(`  ${idx + 1}. ${safeLabel} (Evidence: ${c.probability}%, Correlation: ${c.correlation}) - Deviation: ${c.deviation}`);
+      });
+    }
+
+    // Defect Patterns
+    if (defectPatterns?.patterns && defectPatterns.patterns.length > 0) {
+      lines.push("", "Detected Defect Patterns:");
+      defectPatterns.patterns.forEach((p) => {
+        lines.push(`  - ${p.label}: Risk Level ${p.risk_level}, Affected Wafers: ${p.affected_lots}, Correlation: ${p.top_correlation}`);
+      });
+    }
 
     // Top failing wafers
     if (summary.top_fail_wafers && summary.top_fail_wafers.length > 0) {
@@ -216,6 +285,37 @@ function buildDataContext(
   }
 
   lines.push("=== END LIVE DATA ===");
+
+  if (savedAnalyses && savedAnalyses.length > 0) {
+    lines.push("", "=== SAVED ANALYSIS HISTORY (for comparison) ===");
+    lines.push(`Total saved analyses: ${savedAnalyses.length}`);
+    
+    const latest = savedAnalyses[0];
+    lines.push("", "LATEST SAVED ANALYSIS:");
+    lines.push(`  Dataset: ${latest.dataset_name}`);
+    lines.push(`  Yield: ${latest.yield_percentage}%`);
+    lines.push(`  Fail Rate: ${latest.fail_rate}%`);
+    lines.push(`  Pass Count: ${latest.pass_count}`);
+    lines.push(`  Fail Count: ${latest.fail_count}`);
+    if (latest.root_causes?.causes) {
+      lines.push(`  Top Risks: ${latest.root_causes.causes.slice(0,3).map((c:any) => c.label).join(", ")}`);
+    }
+
+    if (savedAnalyses.length > 1) {
+      const prev = savedAnalyses[1];
+      lines.push("", "PREVIOUS SAVED ANALYSIS:");
+      lines.push(`  Dataset: ${prev.dataset_name}`);
+      lines.push(`  Yield: ${prev.yield_percentage}%`);
+      lines.push(`  Fail Rate: ${prev.fail_rate}%`);
+      lines.push(`  Pass Count: ${prev.pass_count}`);
+      lines.push(`  Fail Count: ${prev.fail_count}`);
+      if (prev.root_causes?.causes) {
+        lines.push(`  Top Risks: ${prev.root_causes.causes.slice(0,3).map((c:any) => c.label).join(", ")}`);
+      }
+    }
+    lines.push("=== END SAVED HISTORY ===");
+  }
+
   return lines.join("\n");
 }
 
@@ -227,15 +327,22 @@ const BASE_SYSTEM_PROMPT =
   "You are YieldSentinel Assistant, a data-aware AI assistant embedded inside the YieldSentinel AI " +
   "semiconductor yield analysis platform.\n\n" +
   "CRITICAL RULES:\n" +
-  "1. When the user asks about wafer counts, predictions, failure rates, probabilities, or model info, " +
-  "you MUST use the numbers from the '=== YIELDSENTINEL LIVE DATA ===' block provided in the system context. " +
-  "Do NOT invent, estimate, or guess any numerical values.\n" +
-  "2. If the live data block says 'NOT AVAILABLE YET', tell the user to upload and analyze a CSV first. " +
+  "1. When the user asks about wafer counts, predictions, failure rates, probabilities, features, root causes, or defect patterns, " +
+  "you MUST use the numbers and findings from the '=== YIELDSENTINEL LIVE DATA ===' block provided in the system context. " +
+  "Do NOT invent, estimate, or guess any numerical values, patterns, or root causes.\n" +
+  "2. If information is unavailable, clearly say 'This information is not available in the current dataset/analysis' instead of inventing it.\n" +
+  "3. Answer using the currently selected dataset/analysis context, not hardcoded demo data.\n" +
+  "4. Use terminology like 'Feature 103' instead of 'Sensor 103' unless actual sensor metadata exists in the data block. " +
+  "Never claim a feature is a physical sensor, equipment, or definite root cause unless the dataset provides that evidence.\n" +
+  "5. Never convert correlation/feature importance into a fake probability or confidence.\n" +
+  "6. If the live data block says 'NOT AVAILABLE YET', tell the user to upload and analyze a CSV first. " +
   "Do NOT say you cannot access the data — it is available once a CSV is analyzed.\n" +
-  "3. Answer in the same language the user uses (English, Hindi, Hinglish — all are fine).\n" +
-  "4. Keep answers concise. For counts/rates, lead with the number in bold (**number**).\n" +
-  "5. Never show a status of FAIL with a low fail probability or vice versa — always use the numbers as given.\n" +
-  "6. For wafer-specific queries, use the exact probability values from the live data.\n\n" +
+  "7. Answer in the same language the user uses (English, Hindi, Hinglish — all are fine).\n" +
+  "8. Keep answers concise. For counts/rates, lead with the number in bold (**number**).\n" +
+  "9. Never show a status of FAIL with a low fail probability or vice versa — always use the numbers as given.\n" +
+  "10. For wafer-specific queries, use the exact probability values from the live data.\n" +
+  "11. If the user asks to COMPARE analyses or requests history, use the '=== SAVED ANALYSIS HISTORY ===' block. " +
+  "Compare the yield, fail rates, and top risks between the latest and previous saved analysis. Do not claim the previous run is unavailable if it is listed there.\n\n" +
   "You also understand semiconductor manufacturing, wafer yield, defects, sensors, and ML concepts.";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -252,7 +359,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let body: { message?: string; history?: { role: string; content: string }[] };
+  let body: { message?: string; history?: { role: string; content: string }[]; userId?: string | null };
   try {
     body = await req.json();
   } catch {
@@ -277,11 +384,14 @@ export async function POST(req: NextRequest) {
   let dataContextBlock = "";
   if (needsAnalysisData(userMessage)) {
     const requestedWaferId = extractWaferId(userMessage);
-    const [summary, modelInfo] = await Promise.all([
+    const [summary, modelInfo, rootCauses, defectPatterns, savedAnalyses] = await Promise.all([
       fetchAnalysisSummary(),
       fetchModelInfo(),
+      fetchRootCauses(),
+      fetchDefectPatterns(),
+      body.userId ? getAnalyses(body.userId) : Promise.resolve(null)
     ]);
-    dataContextBlock = buildDataContext(summary, modelInfo, requestedWaferId);
+    dataContextBlock = buildDataContext(summary, modelInfo, rootCauses, defectPatterns, requestedWaferId, savedAnalyses);
   }
 
   // ── Build full system prompt ───────────────────────────────────────────────

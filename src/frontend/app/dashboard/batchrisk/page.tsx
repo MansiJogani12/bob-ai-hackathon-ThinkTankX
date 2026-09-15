@@ -1,9 +1,12 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAppContext } from "../../../src/lib/store";
 import { getDashboard, type DashboardResponse } from "../../../src/services/api";
+import { supabase } from "../../../src/lib/supabase";
+import { getAnalysis, type Analysis } from "../../../src/lib/analysisDb";
+import DatasetSelector from "../../components/DatasetSelector";
 
 type Badge = "HIGH" | "MEDIUM" | "LOW";
 const BADGE_STYLES: Record<Badge, { bg: string; color: string; border: string }> = {
@@ -12,14 +15,12 @@ const BADGE_STYLES: Record<Badge, { bg: string; color: string; border: string }>
   LOW:    { bg: "rgba(6,78,59,0.6)",    color: "#4ade80", border: "rgba(16,185,129,0.3)"  },
 };
 
-function wafersToDisplay(result: ReturnType<typeof useAppContext>["batchResult"]): Array<{
-  id: string; risk: number; yield: number; badge: "HIGH" | "MEDIUM" | "LOW";
-}> {
-  if (!result) return [];
-  return (result.wafers ?? []).map(w => {
+interface WaferRow { id: string; risk: number; yield: number; badge: Badge; }
+
+function wafersFromBatch(wafers: { wafer_id: string; fail_probability: number; pass_probability: number }[]): WaferRow[] {
+  return wafers.map(w => {
     const riskPct = w.fail_probability * 100;
-    const badge: "HIGH" | "MEDIUM" | "LOW" =
-      riskPct >= 30 ? "HIGH" : riskPct >= 10 ? "MEDIUM" : "LOW";
+    const badge: Badge = riskPct >= 30 ? "HIGH" : riskPct >= 10 ? "MEDIUM" : "LOW";
     return { id: w.wafer_id, risk: riskPct, yield: w.pass_probability * 100, badge };
   });
 }
@@ -27,32 +28,99 @@ function wafersToDisplay(result: ReturnType<typeof useAppContext>["batchResult"]
 export default function BatchRiskPage() {
   const router = useRouter();
   const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
-  const { batchResult, batchWaferSensors, setSelectedWaferSensors } = useAppContext();
+  const { batchResult, batchWaferSensors, setSelectedWaferSensors, activeAnalysisId } = useAppContext();
   const [dashboard, setDashboard] = useState<DashboardResponse | null>(null);
+  const [savedAnalysis, setSavedAnalysis] = useState<Analysis | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
 
+  /* ── Auth ── */
   useEffect(() => {
-    if (batchResult) return;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUserId(session.user.id);
+    });
+  }, []);
+
+  /* ── Load saved analysis when activeAnalysisId changes ── */
+  useEffect(() => {
+    if (!userId || !activeAnalysisId) { setSavedAnalysis(null); return; }
+    getAnalysis(userId, activeAnalysisId).then(setSavedAnalysis);
+  }, [userId, activeAnalysisId]);
+
+  /* ── Fallback: fetch dashboard when no live batch and no saved dataset ── */
+  useEffect(() => {
+    if (batchResult || activeAnalysisId) return;
     let cancelled = false;
     getDashboard()
       .then(data => { if (!cancelled) setDashboard(data); })
       .catch(() => { if (!cancelled) setDashboard(null); });
     return () => { cancelled = true; };
-  }, [batchResult]);
+  }, [batchResult, activeAnalysisId]);
 
-  const WAFERS = batchResult
-    ? wafersToDisplay(batchResult)
-    : (dashboard?.upcoming_batch_risk ?? []).map(w => ({
+  /* ── Resolve the wafer list from the active source ── */
+  const WAFERS = useMemo((): WaferRow[] => {
+    // 1. Saved analysis selected → use its prediction_summary wafers
+    if (activeAnalysisId && savedAnalysis?.prediction_summary) {
+      const ps = savedAnalysis.prediction_summary as {
+        wafers?: { wafer_id: string; fail_probability: number; pass_probability: number }[];
+      };
+      if (ps.wafers?.length) return wafersFromBatch(ps.wafers);
+    }
+    // 2. Live session batch result
+    if (!activeAnalysisId && batchResult?.wafers?.length) {
+      return wafersFromBatch(batchResult.wafers);
+    }
+    // 3. Dashboard fallback (no CSV uploaded yet)
+    if (!activeAnalysisId && dashboard?.upcoming_batch_risk?.length) {
+      return dashboard.upcoming_batch_risk.map(w => ({
         id: w.wafer_id,
         risk: w.risk_score_pct,
         yield: 100 - w.risk_score_pct,
         badge: (w.badge === "HIGH" ? "HIGH" : w.badge === "MEDIUM" ? "MEDIUM" : "LOW") as Badge,
       }));
-  const highCount   = WAFERS.filter(w => w.badge === "HIGH").length;
-  const medCount    = WAFERS.filter(w => w.badge === "MEDIUM").length;
-  const lowCount    = WAFERS.filter(w => w.badge === "LOW").length;
+    }
+    return [];
+  }, [activeAnalysisId, savedAnalysis, batchResult, dashboard]);
+
+  /* ── Resolve summary counts from the active source ── */
+  const summary = useMemo(() => {
+    if (activeAnalysisId && savedAnalysis) {
+      return {
+        totalWafers: savedAnalysis.total_records ?? WAFERS.length,
+        passCount:   savedAnalysis.pass_count    ?? WAFERS.filter(w => w.badge === "LOW").length,
+        failCount:   savedAnalysis.fail_count    ?? WAFERS.filter(w => w.badge !== "LOW").length,
+        passRate:    savedAnalysis.yield_percentage ?? null,
+        execTime:    null as string | null,
+      };
+    }
+    if (!activeAnalysisId && batchResult) {
+      return {
+        totalWafers: batchResult.total_wafers,
+        passCount:   batchResult.pass_count,
+        failCount:   batchResult.fail_count,
+        passRate:    batchResult.pass_rate ?? null,
+        execTime:    batchResult.estimated_execution_time_ms,
+      };
+    }
+    if (!activeAnalysisId && dashboard) {
+      return {
+        totalWafers: dashboard.total_wafers ?? WAFERS.length,
+        passCount:   dashboard.pass_count   ?? null,
+        failCount:   dashboard.fail_count   ?? null,
+        passRate:    dashboard.pass_rate    ?? null,
+        execTime:    null as string | null,
+      };
+    }
+    return { totalWafers: null, passCount: null, failCount: null, passRate: null, execTime: null };
+  }, [activeAnalysisId, savedAnalysis, batchResult, dashboard, WAFERS]);
+
+  const highCount = WAFERS.filter(w => w.badge === "HIGH").length;
+  const medCount  = WAFERS.filter(w => w.badge === "MEDIUM").length;
+  const lowCount  = WAFERS.filter(w => w.badge === "LOW").length;
+  const hasData   = !!activeAnalysisId ? !!savedAnalysis : !!(batchResult || dashboard);
 
   function handleView(i: number) {
-    if (batchResult?.wafers?.[i]) {
+    // Only set sensor context when viewing live session wafers
+    if (!activeAnalysisId && batchResult?.wafers?.[i]) {
       setSelectedWaferSensors(batchWaferSensors[i] ?? null);
     }
     setLoadingIdx(i);
@@ -64,6 +132,7 @@ export default function BatchRiskPage() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
+      <DatasetSelector />
 
       {/* ── Breadcrumb ribbon ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -97,10 +166,10 @@ export default function BatchRiskPage() {
       {/* ── 4 KPI cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
         {[
-          { label: "Total Wafers",  value: batchResult ? String(batchResult.total_wafers) : dashboard ? String(dashboard.total_wafers ?? WAFERS.length) : "--", valueColor: "#fff", sub: batchResult || dashboard ? "Batch analyzed" : "Awaiting data", subColor: "#94a3b8" },
-          { label: "High Risk",     value: batchResult ? String(highCount) : dashboard ? String(dashboard.risk_counts?.high ?? highCount) : "--", valueColor: "#f43f5e", sub: "Critical alerts", subColor: "rgba(244,63,94,0.7)" },
-          { label: "Medium Risk",   value: batchResult ? String(medCount) : dashboard ? String(dashboard.risk_counts?.medium ?? medCount) : "--", valueColor: "#f59e0b", sub: "Watchlist", subColor: "rgba(245,158,11,0.7)" },
-          { label: "Low Risk",      value: batchResult ? String(lowCount) : dashboard ? String(dashboard.risk_counts?.low ?? lowCount) : "--", valueColor: "#fff", sub: batchResult ? `${(batchResult.pass_rate ?? 0).toFixed(2)}%` : dashboard ? `${(dashboard.pass_rate ?? 0).toFixed(2)}%` : "--", subColor: "#4ade80" },
+          { label: "Total Wafers", value: summary.totalWafers != null ? String(summary.totalWafers) : "--", valueColor: "#fff",     sub: hasData ? "Batch analyzed" : "Awaiting data", subColor: "#94a3b8" },
+          { label: "High Risk",    value: String(highCount),  valueColor: "#f43f5e", sub: "Critical alerts", subColor: "rgba(244,63,94,0.7)" },
+          { label: "Medium Risk",  value: String(medCount),   valueColor: "#f59e0b", sub: "Watchlist",       subColor: "rgba(245,158,11,0.7)" },
+          { label: "Low Risk",     value: String(lowCount),   valueColor: "#fff",    sub: summary.passRate != null ? `${summary.passRate.toFixed(2)}%` : "--", subColor: "#4ade80" },
         ].map((k, i) => (
           <div key={i} style={{ background: "rgba(14,16,21,1)", borderRadius: 12, padding: 20,
             border: "1px solid rgba(26,29,38,1)", transition: "border-color 0.2s" }}
@@ -198,22 +267,28 @@ export default function BatchRiskPage() {
         display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between",
         gap: 16, fontSize: "0.75rem", fontFamily: "ui-monospace,monospace", color: "#64748b" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <span>BATCH SIZE: <span style={{ color: "#cbd5e1" }}>{batchResult ? String(batchResult.total_wafers) : dashboard ? String(dashboard.total_wafers ?? "--") : "--"}</span></span>
+          <span>BATCH SIZE: <span style={{ color: "#cbd5e1" }}>{summary.totalWafers != null ? String(summary.totalWafers) : "--"}</span></span>
           <span style={{ color: "#374151" }}>|</span>
-          <span>PASS: <span style={{ color: "#4ade80" }}>{batchResult ? String(batchResult.pass_count) : dashboard ? String(dashboard.pass_count ?? "--") : "--"}</span></span>
+          <span>PASS: <span style={{ color: "#4ade80" }}>{summary.passCount != null ? String(summary.passCount) : "--"}</span></span>
           <span style={{ color: "#374151" }}>|</span>
-          <span>FAIL: <span style={{ color: "#f87171" }}>{batchResult ? String(batchResult.fail_count) : dashboard ? String(dashboard.fail_count ?? "--") : "--"}</span></span>
-          {batchResult && (
+          <span>FAIL: <span style={{ color: "#f87171" }}>{summary.failCount != null ? String(summary.failCount) : "--"}</span></span>
+          {summary.execTime && (
             <>
               <span style={{ color: "#374151" }}>|</span>
-              <span>EXEC: <span style={{ color: "#cbd5e1" }}>{batchResult.estimated_execution_time_ms}</span></span>
+              <span>EXEC: <span style={{ color: "#cbd5e1" }}>{summary.execTime}</span></span>
+            </>
+          )}
+          {activeAnalysisId && savedAnalysis && (
+            <>
+              <span style={{ color: "#374151" }}>|</span>
+              <span>DATASET: <span style={{ color: "#fbbf24" }}>{savedAnalysis.dataset_name}</span></span>
             </>
           )}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ width: 8, height: 8, borderRadius: "50%",
-            background: batchResult ? "#10b981" : "rgba(245,158,11,0.8)", display: "inline-block" }} />
-          <span style={{ color: "#94a3b8" }}>{batchResult || dashboard ? "Batch data loaded" : "Awaiting batch upload"}</span>
+            background: hasData ? "#10b981" : "rgba(245,158,11,0.8)", display: "inline-block" }} />
+          <span style={{ color: "#94a3b8" }}>{hasData ? (activeAnalysisId ? "Saved analysis loaded" : "Batch data loaded") : "Awaiting batch upload"}</span>
         </div>
       </div>
     </div>
