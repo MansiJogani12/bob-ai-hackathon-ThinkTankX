@@ -1,45 +1,44 @@
 # S1 Wafer Yield Root Cause & Defect Pattern Analyser
+## 👥 Team
 
-## Team
-
-| Item | Details |
+| Field | Value |
 |---|---|
-| Team Name | ThinkTankX |
-| Team Lead | Yashvi Tanna — [24cs100@charusat.edu.in](mailto:24cs100@charusat.edu.in) |
-| Members | Mansi Jogani; Khushi Undhad; Priyanshu Macwan |
+| **Team Name** | ThinkTankX |
+| **Track** | AI |
+| **Team Lead** | Yashvi Tanna — [24cs100@charusat.edu.in](mailto:24cs100@charusat.edu.in) |
+| **Members** | Mansi Jogani, Khushi Undhad, Priyanshu Macwan |
 
-## Problem Statement
+## 🎯 Problem Statement
 
-At 3nm and 5nm nodes, even a small decline in wafer yield can create large financial losses. The challenge is not only detecting a failing wafer after it has already been produced; it is identifying which lots and process trends are likely to fail early enough to reduce scrap, rework, and lost production.
+At 3nm and 5nm chip nodes, even a small decline in wafer yield can create major financial losses. Semiconductor process and quality engineers must analyse large volumes of wafer, lot, process, sensor, and defect information to identify likely causes of poor yield and determine which upcoming batches may be at risk.
 
-Across semiconductor manufacturing, root causes are spread across thousands of equipment signals, process parameters, and defect observations. Engineers often investigate these signals manually, which slows diagnosis and makes it difficult to prioritise corrective actions. The need is to analyse wafer and lot data, identify recurring defect patterns, rank likely process drivers, and flag upcoming batches that are at risk before the next run.
+Root causes are distributed across many signals, making manual investigation slow and difficult to prioritise. Engineers need to analyse wafer and lot data, identify recurring patterns, rank likely process drivers, recommend corrective actions, and flag upcoming batches whose process parameters historically correlate with low yield.
 
-## Solution
+## 💡 Solution
 
-YieldSentinel AI is a working prototype designed to address this challenge. The project combines a trained XGBoost classifier, median-imputation preprocessing, and SHAP-based explanations with a dashboard for batch review and wafer investigation. The backend accepts wafer sensor data and batch CSV uploads, produces pass/fail probabilities, and highlights the strongest contributors behind high-risk predictions.
+YieldSentinel AI is a working prototype that combines an XGBoost model, median-imputation preprocessing, SHAP-based explanations, a FastAPI backend, and a Next.js dashboard. It predicts wafer pass/fail risk, analyses uploaded batch CSV data, and highlights important model contributors for engineering review.
 
-The repository contains the implemented FastAPI backend, Next.js dashboard, model-training workflow, and packaged model artifact used for local inference and operational review. SHAP is used to support investigation and engineering interpretation, not to claim definitive physical root-cause proof.
+The dashboard supports batch-risk, wafer, process, root-cause, defect-pattern, and corrective-action investigation views. SHAP results are used to explain model contributions and prioritise investigation; they are not presented as definitive physical root-cause proof.
 
-## Key Features
+## ✨ Key Features
 
-- Wafer-level pass/fail prediction using a trained XGBoost model
-- Batch CSV screening for pass/fail summaries across multiple wafers
-- SHAP-based top contributors to explain why a wafer is predicted as risky
-- Dashboard views for batch risk, wafer detail, process trend review, and root-cause analysis
-- Defect-pattern and corrective-action views for engineering investigation
-- Optional conversational assistant in the frontend when OpenRouter is configured
+- **Wafer-level prediction:** Classifies wafer pass/fail risk using XGBoost.
+- **Batch risk analysis:** Screens uploaded CSV data and summarizes risk across multiple wafers.
+- **Explainable predictions:** Uses SHAP to show the strongest feature contributions behind a prediction.
+- **Operational dashboards:** Provides batch-risk, wafer, process, root-cause, and defect-pattern analysis views.
+- **Engineering investigation:** Provides corrective-action views and an optional OpenRouter conversational assistant when configured.
 
-## Tech Stack
+## 🛠️ Tech Stack
 
-| Category | Technologies used in this project |
+| Category | Technologies |
 |---|---|
-| Languages | Python, TypeScript |
-| Backend | FastAPI, pandas, NumPy, joblib, XGBoost, SHAP |
-| Frontend | Next.js, React, Tailwind CSS, Framer Motion |
-| Model training | XGBoost classifier with median imputation and threshold tuning |
-| Optional AI support | OpenRouter API integration in the frontend |
+| **Languages** | Python, TypeScript |
+| **Frameworks** | FastAPI, Next.js, React, Tailwind CSS |
+| **IBM Technologies** | None |
+| **Databases** | None required for the core workflow |
+| **Other** | XGBoost, SHAP, pandas, NumPy, scikit-learn, joblib, Framer Motion, GitHub Actions |
 
-## Repository Structure
+## 📁 Repository Structure
 
 ```text
 bob-ai-hackathon-ThinkTankX/
@@ -49,10 +48,10 @@ bob-ai-hackathon-ThinkTankX/
 ├── setup.ps1
 ├── start.ps1
 ├── docs/
-│   ├── architecture.md
 │   ├── problem-statement.md
-│   ├── setup-guide.md
 │   ├── solution-overview.md
+│   ├── architecture.md
+│   ├── setup-guide.md
 │   └── template-guide.md
 ├── demo/
 │   ├── demo-video-link.txt
@@ -60,99 +59,102 @@ bob-ai-hackathon-ThinkTankX/
 │   └── screenshots/
 ├── presentation/
 │   └── README.md
-├── src/
-│   ├── README.md
-│   ├── YieldSentinel_Improved_Model.ipynb
-│   ├── backend/
-│   │   ├── main.py
-│   │   ├── train_model.py
-│   │   ├── requirements.txt
-│   │   ├── uci-secom.csv
-│   │   ├── yieldsentinel_best_model.pkl
-│   │   └── README.md
-│   └── frontend/
-│       ├── README.md
-│       ├── app/
-│       ├── public/
-│       ├── src/
-│       ├── package.json
-│       ├── next.config.mjs
-│       ├── postcss.config.mjs
-│       ├── tailwind.config.ts
-│       └── tsconfig.json
-└── .gitignore
+└── src/
+	├── README.md
+	├── YieldSentinel_Improved_Model.ipynb
+	├── backend/
+	│   ├── README.md
+	│   ├── main.py
+	│   ├── train_model.py
+	│   ├── requirements.txt
+	│   ├── uci-secom.csv
+	│   ├── yieldsentinel_best_model.pkl
+	│   ├── supabase_client.py
+	│   └── supabase_migrations.sql
+	└── frontend/
+		├── README.md
+		├── app/
+		├── public/
+		├── src/
+		├── package.json
+		├── package-lock.json
+		├── next.config.mjs
+		├── postcss.config.mjs
+		├── tailwind.config.ts
+		└── tsconfig.json
 ```
 
-## How to Run
+## ⚡ How to Run
 
-### Prerequisites
+Use Python 3.11+, Node.js 18+, npm, and Windows PowerShell.
 
-- Python 3.11+
-- Node.js 18+
-- npm
-
-### Quick start on Windows
-
-From the repository root, run:
+From the repository root, run the setup script once:
 
 ```powershell
 .\setup.ps1
+```
+
+Start both services:
+
+```powershell
 .\start.ps1
 ```
 
-This sets up the backend and frontend dependencies and launches:
+The application runs at:
 
-- Backend: http://localhost:8000
 - Frontend: http://localhost:3000
+- Backend: http://localhost:8000
 
-### Manual start
+For a manual setup, install the backend and frontend dependencies as follows:
 
 ```powershell
 cd src/backend
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+```powershell
+cd ..\frontend
+npm install
+```
+
+Then start the services in separate terminals:
+
+```powershell
+cd src/backend
 .\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
 ```
 
-In a second terminal:
-
 ```powershell
 cd src/frontend
-npm install
 npm run dev
 ```
 
-### Model retraining
-
-The repository already includes the trained model artifact at `src/backend/yieldsentinel_best_model.pkl`. If you want to regenerate it from the included SECOM-style dataset, run:
+The repository includes a trained model at `src/backend/yieldsentinel_best_model.pkl`. Retraining is optional:
 
 ```powershell
 cd src/backend
 .\.venv\Scripts\python.exe train_model.py --data uci-secom.csv
 ```
 
-## Demo
+## 🖥️ Demo
 
-This project is designed to run locally from this repository. The demo materials included in the repo are meant for presentation support, and the expected walkthrough is a local run using the setup instructions above.
+| Artifact | Link |
+|---|---|
+| 📹 Demo Video | [See demo/demo-video-link.txt](demo/demo-video-link.txt) |
+| 🌐 Live Demo | [See demo/live-demo-url.txt](demo/live-demo-url.txt) |
+| 🖼️ Screenshots | [See demo/screenshots/](demo/screenshots/) |
+| 📊 Presentation | [See presentation/](presentation/) |
 
-The repository includes:
+The application is designed for a local walkthrough using the setup commands above. The linked files are the repository’s submission artifact locations; no external demo URL is invented here.
 
-- demo video note: [demo/demo-video-link.txt](demo/demo-video-link.txt)
-- live demo note: [demo/live-demo-url.txt](demo/live-demo-url.txt)
-- screenshots guidance: [demo/screenshots/README.md](demo/screenshots/README.md)
-- presentation notes: [presentation/README.md](presentation/README.md)
+## ⚠️ Known Limitations
 
-## Known Limitations
+- The project uses a sample SECOM-style semiconductor dataset and a local trained model artifact rather than a production fab data pipeline.
+- The dashboard is a prototype for local validation, not production-scale manufacturing infrastructure.
+- SHAP explains model feature contributions for investigation but does not prove a physical root cause.
+- The optional conversational assistant depends on OpenRouter configuration and is not required for the core workflow.
 
-- The project currently relies on a local model artifact and a sample SECOM-style dataset rather than a full production manufacturing pipeline.
-- The dashboard and analytics are designed for a prototype and local validation workflow rather than a production-scale deployment.
-- SHAP values highlight the strongest model contributors; they are useful for investigation, but they are not definitive physical root-cause proof.
-- The optional conversational assistant depends on external configuration and is not required for the core prediction workflow.
+## 🏅 What We're Most Proud Of
 
-## What We're Most Proud Of
-
-We are most proud of combining prediction with explainability. The system does not stop at a pass/fail label; it highlights which signals are driving the decision, surfaces likely risk patterns, and presents those findings in a dashboard designed to support engineering review. That makes the project more actionable for process and quality teams working on yield risk and root-cause investigation.
-
----
-
-ThinkTankX | S1 Wafer Yield Root Cause & Defect Pattern Analyser | YieldSentinel AI
+We are most proud of combining wafer-risk prediction with SHAP-based explainability and an operational dashboard for batch and wafer investigation. The project turns model output into a practical review workflow by showing which signals contribute most to risk and giving engineering teams focused views for process, root-cause, defect-pattern, and corrective-action analysis.
