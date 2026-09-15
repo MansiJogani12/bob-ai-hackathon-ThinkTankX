@@ -143,15 +143,37 @@ export default function WaferPage() {
         const names = info.feature_names ?? [];
         setFeatureNames(names);
         const defaults: Record<string, number> = {};
+        const hasSelected = selectedWaferSensors && Object.keys(selectedWaferSensors).length > 0;
+
         names.forEach((f: string) => {
           defaults[f] = selectedWaferSensors?.[f] ?? 0;
         });
         setVals(defaults);
+
+        if (hasSelected) {
+          fetch(`${BACKEND}/predict`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ sensors: defaults }),
+          })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+              if (data) {
+                setFailProb(data.fail_probability);
+                setPassProb(data.pass_probability);
+                setPrediction(data.prediction);
+                setLatencyMs(data.latency_ms ?? "--");
+                setShap(data.top_shap_features ?? []);
+                setRunTick(t => t + 1);
+              }
+            })
+            .catch(() => {});
+        }
       })
       .catch((err: unknown) => {
         setError(err instanceof Error ? err.message : "Unable to load model features.");
       });
-  }, []);
+  }, [selectedWaferSensors]);
   const [running,    setRunning]    = useState(false);
   const [error,      setError]      = useState<string | null>(null);
   const [prediction, setPrediction] = useState<string | null>(null);
