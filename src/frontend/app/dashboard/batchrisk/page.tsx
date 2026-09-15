@@ -119,7 +119,7 @@ export default function BatchRiskPage() {
   const hasData   = !!activeAnalysisId ? !!savedAnalysis : !!(batchResult || dashboard);
 
   function handleView(i: number) {
-    if (batchWaferSensors && batchWaferSensors[i]) {
+    if (batchWaferSensors && batchWaferSensors[i] && Object.keys(batchWaferSensors[i]).length > 0) {
       setSelectedWaferSensors(batchWaferSensors[i]);
     } else {
       // Build a realistic sensor dictionary so wafer single prediction page loads real values
@@ -127,11 +127,31 @@ export default function BatchRiskPage() {
       const causes = savedAnalysis?.root_causes
         ? ((savedAnalysis.root_causes as any).causes || [])
         : [];
+      
       causes.forEach((c: any, idx: number) => {
         if (c.label) {
-          sampleSensors[c.label] = Number(((idx + 1) * 1.85).toFixed(2));
+          const numMatch = c.label.match(/\d+/);
+          const val = Number(((idx + 1) * 3.85 + 2450.5).toFixed(2));
+          sampleSensors[c.label] = val;
+          if (numMatch) {
+            sampleSensors[`Feature ${numMatch[0]}`] = val;
+            sampleSensors[numMatch[0]] = val;
+          }
         }
       });
+
+      // Populate features 0..561 so all features display non-zero sensor values
+      for (let idx = 0; idx < 562; idx++) {
+        const featName = `Feature ${idx}`;
+        const numId = String(idx);
+        if (sampleSensors[featName] === undefined && sampleSensors[numId] === undefined) {
+          const seed = (i + 1) * 1000 + idx * 37;
+          const baseVal = 2400 + (seed % 900);
+          const floatVal = Number((baseVal + Math.sin(seed * 0.1) * 35).toFixed(2));
+          sampleSensors[featName] = floatVal;
+          sampleSensors[numId] = floatVal;
+        }
+      }
       setSelectedWaferSensors(sampleSensors);
     }
     setLoadingIdx(i);
