@@ -1,68 +1,116 @@
 # Setup Guide
 
-This guide describes the actual local setup for YieldSentinel AI.
+This document describes the actual local setup path for YieldSentinel AI as implemented in this repository.
 
 ## Prerequisites
 
+Before running the project locally, install:
+
 - Python 3.11+
-- Node.js 18+ and npm
+- Node.js 18+
+- npm
+- Windows PowerShell (recommended for the included setup scripts)
 
 ## Environment Variables
 
-The AI assistant is optional. To enable it, configure `src/frontend/.env.local`:
+The core application does not require any special environment variables to run. The optional AI assistant does. If you want to enable the frontend chat route, create `src/frontend/.env.local` and add:
 
 | Variable | Description | Required |
 |---|---|---|
-| `OPENROUTER_API_KEY` | OpenRouter API key for the chatbot | No |
-| `OPENROUTER_MODEL` | OpenRouter model identifier | No |
+| `OPENROUTER_API_KEY` | API key for the optional OpenRouter-based assistant | No |
+| `OPENROUTER_MODEL` | Model identifier used by the chat route | No |
+
+If these values are not present, the dashboard and backend analytics remain usable without the chat feature.
 
 ## Installation
 
-### Windows one-command setup
+### Option 1: One-command Windows setup
 
-From the repository root, run the setup script once:
+From the repository root, run:
 
 ```powershell
 .\setup.ps1
 ```
 
-The script creates `src/backend/.venv`, installs Python dependencies, and runs `npm install` in the frontend.
+This script:
 
-### Manual installation
+- creates the backend virtual environment in `src/backend/.venv`
+- installs the Python dependencies from `src/backend/requirements.txt`
+- runs `npm install` in the frontend
+
+### Option 2: Manual setup
 
 ```powershell
 cd src/backend
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+```powershell
 cd ..\frontend
 npm install
 ```
 
 ## Running the Application
 
-Start both services from the repository root:
+### Start both services together
+
+From the repository root:
 
 ```powershell
 .\start.ps1
 ```
 
-The application is available at `http://localhost:3000`. The API runs at `http://localhost:8000`.
+This launches:
 
-The trained model is included in `src/backend/yieldsentinel_best_model.pkl`; retraining is optional:
+- backend API at http://localhost:8000
+- frontend dashboard at http://localhost:3000
+
+### Manual backend start
+
+```powershell
+cd src/backend
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
+```
+
+### Manual frontend start
+
+```powershell
+cd src/frontend
+npm run dev
+```
+
+## Verification
+
+After startup, verify the application in the browser and via the backend health endpoint:
+
+- Frontend: http://localhost:3000
+- Backend: http://localhost:8000
+- Health check: http://localhost:8000/ or http://localhost:8000/health
+
+The application is functional when the dashboard loads and the backend responds successfully. For batch analysis, upload a CSV with the expected wafer-feature columns and review the returned prediction summary.
+
+## Retraining the Model
+
+The repository includes a trained model artifact at `src/backend/yieldsentinel_best_model.pkl`. Retraining is optional and only needed if you want to rebuild the model from the source data.
 
 ```powershell
 cd src/backend
 .\.venv\Scripts\python.exe train_model.py --data uci-secom.csv
 ```
 
-## Running Tests
-
-No automated test suite is currently included. Check the API with `http://localhost:8000/` after startup.
-
 ## Troubleshooting
 
-| Issue | Solution |
+| Issue | Suggested fix |
 |---|---|
-| `ModuleNotFoundError` | Run `.\setup.ps1` again, then restart with `.\start.ps1`. |
-| `WinError 32` during pip install | Close any running backend or Python process and run `.\setup.ps1` again. |
-| Chatbot unavailable | Check `OPENROUTER_API_KEY` in `src/frontend/.env.local`; the dashboard itself does not require it. |
+| `ModuleNotFoundError` | Run the setup script again or reinstall backend dependencies in `src/backend/.venv` |
+| `WinError 32` or file lock issue during install | Close any active Python or backend process and rerun the setup |
+| Frontend cannot connect to the backend | Confirm the backend is running on port 8000 and that the frontend is using the default backend URL |
+| Chat assistant is unavailable | Ensure `src/frontend/.env.local` contains the correct `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` values |
+| No analytics after CSV upload | Make sure the uploaded CSV contains the expected feature columns and that the backend model has loaded successfully |
+
+## Practical Notes
+
+- This project is a local prototype and is intended for demo and validation use.
+- The model artifact and sample dataset are included in the repository for local execution.
+- The optional AI and persistence features are not required for the primary wafer-risk workflow.

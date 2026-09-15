@@ -1,71 +1,89 @@
-# YieldSentinel AI — Backend
+# Backend Overview
 
-FastAPI inference backend for the Yield Intelligence dashboard.
+This folder contains the FastAPI backend used by the YieldSentinel AI application. It is responsible for model loading, inference, batch analysis, and analytics endpoints used by the dashboard.
 
----
+## Key Responsibilities
 
-## Quick Start
+- load the trained XGBoost model package and metadata at startup
+- transform incoming wafer inputs to the expected feature schema
+- impute missing values using the stored preprocessing object
+- return pass/fail probabilities and top SHAP feature contributors
+- handle CSV upload analysis for multiple wafers
+- provide dashboard metrics, root-cause summaries, and defect-pattern outputs
+- optionally persist prediction data to Supabase when credentials are configured
 
-### 1. Install dependencies
+## Main Files
 
-```bash
-pip install -r requirements.txt
+```text
+src/backend/
+├── main.py
+├── train_model.py
+├── requirements.txt
+├── uci-secom.csv
+├── yieldsentinel_best_model.pkl
+├── supabase_client.py
+├── supabase_migrations.sql
+├── README.md
+└── .venv/   (created locally during setup)
 ```
 
-### 2. Start the API server
+## API Endpoints
 
-```bash
-uvicorn main:app --reload --port 8000
+The backend exposes the following endpoints in the current implementation:
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/` | Basic health response |
+| GET | `/health` | Health check used by the frontend |
+| GET | `/model-info` | Returns the model metadata and feature list |
+| POST | `/predict` | Runs single-wafer inference and SHAP ranking |
+| POST | `/predict-csv` | Runs batch analysis for uploaded CSV data |
+| GET | `/analysis-summary` | Returns a compact summary of the latest batch |
+| GET | `/dashboard` | Returns command-center style analytics |
+| GET | `/root-causes` | Returns ranked root-cause indicators |
+| GET | `/defect-patterns` | Returns defect-pattern summaries |
+
+## Model Workflow
+
+The backend expects a serialized model package with:
+
+- feature names
+- model object
+- threshold value
+- imputer for missing values
+- metadata such as model name and target column
+
+This is loaded from `yieldsentinel_best_model.pkl` and used by the inference endpoints.
+
+## Local Run
+
+From the repository root:
+
+```powershell
+.\setup.ps1
+.\start.ps1
 ```
 
-The server starts immediately. Analytics endpoints (`/dashboard`, `/root-causes`,
-`/defect-patterns`, `/health`) work **without a trained model**.
+Or run the backend manually:
 
-Inference endpoints (`/predict`, `/predict-csv`) require the model pkl — see step 3.
-
----
-
-## 3. Train the model (required for inference only)
-
-You need the [UCI SECOM dataset](https://archive.ics.uci.edu/ml/datasets/SECOM).
-Download `uci-secom.csv` and place it in this directory, then run:
-
-```bash
-python train_model.py --data uci-secom.csv
+```powershell
+cd src/backend
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
 ```
 
-This produces `yieldsentinel_best_model.pkl`. Restart the server after training.
+## Retraining
 
----
+If the model needs to be regenerated from the included dataset:
 
-## Endpoints
-
-| Method | Path               | Model needed | Description                        |
-|--------|--------------------|--------------|------------------------------------|
-| GET    | `/health`          | No           | Health check — used by sidebar     |
-| GET    | `/model-info`      | Yes          | Feature list + threshold           |
-| POST   | `/predict`         | Yes          | Single wafer inference + SHAP      |
-| POST   | `/predict-csv`     | Yes          | Batch CSV inference                |
-| GET    | `/dashboard`       | No           | Command Center KPIs                |
-| GET    | `/root-causes`     | No           | Root Cause Analysis ranked list    |
-| GET    | `/defect-patterns` | No           | Defect spatial patterns            |
-
-### Why was `/root-causes` returning 404?
-
-A **404** means the running server process is an **old version** of `main.py` that
-predates the analytics routes. Stop the old process and restart with the current file:
-
-```bash
-# Kill any existing uvicorn process first, then:
-uvicorn main:app --reload --port 8000
+```powershell
+cd src/backend
+.\.venv\Scripts\python.exe train_model.py --data uci-secom.csv
 ```
 
-You can verify all routes are registered by visiting:
-<http://127.0.0.1:8000/docs>
+## Notes
 
----
-
-## CORS
-
-All origins are allowed by default (`allow_origins=["*"]`). Restrict this in
-production by setting `allow_origins=["http://localhost:3000"]`.
+- The backend is designed to function as a local-run prototype.
+- The optional Supabase persistence layer only writes when credentials are available.
+- The analytics endpoints depend on the most recent CSV upload during the active server session.

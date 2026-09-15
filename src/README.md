@@ -1,74 +1,55 @@
-# Source Code
+# Source Code Overview
 
-This folder contains the YieldSentinel AI application: a FastAPI service for
-wafer-risk analysis, a Next.js dashboard, and the model-development notebook.
+This folder contains the actual implementation for the wafer-yield intelligence project: the Python model and API backend, the Next.js frontend dashboard, and the notebook used to develop the model artifact.
 
 ## Project Structure
 
 ```text
 src/
 ├── README.md
-├── .env.example                 # Environment variable template
 ├── YieldSentinel_Improved_Model.ipynb
-│                                  # Model experiments and evaluation
 ├── backend/
-│   ├── main.py                  # FastAPI API and model inference
-│   ├── train_model.py           # Optional model training pipeline
-│   ├── requirements.txt         # Python dependencies
-│   ├── uci-secom.csv            # Training/demo dataset
+│   ├── README.md
+│   ├── main.py
+│   ├── requirements.txt
+│   ├── train_model.py
+│   ├── uci-secom.csv
 │   ├── yieldsentinel_best_model.pkl
-│   │                              # Trained model artifact
-│   └── README.md
-└── frontend/
-    ├── app/                     # Next.js routes and page components
-    │   ├── api/chat/             # Optional OpenRouter chat endpoint
-    │   ├── dashboard/            # Dashboard and analytics pages
-    │   ├── components/           # Reusable UI components
-    │   ├── context.tsx
-    │   ├── globals.css
-    │   ├── layout.tsx
-    │   └── page.tsx
-    ├── public/frames/            # Static dashboard assets
-    ├── src/                      # Shared frontend services and state
-    ├── package.json              # Node.js dependencies and scripts
-    ├── package-lock.json
-    ├── next.config.mjs
-    ├── postcss.config.mjs
-    ├── tailwind.config.ts
-    └── tsconfig.json
+│   ├── supabase_client.py
+│   └── supabase_migrations.sql
+├── frontend/
+│   ├── README.md
+│   ├── app/
+│   ├── public/
+│   ├── src/
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── next.config.mjs
+│   ├── postcss.config.mjs
+│   ├── tailwind.config.ts
+│   └── tsconfig.json
+└── .gitignore
 ```
 
 ## Backend
 
-The FastAPI service runs on port `8000` and provides health, prediction,
-batch prediction, dashboard analytics, root-cause, and defect-pattern
-endpoints. The included model artifact is used by default, so retraining is
-not required for normal development.
+The backend in `src/backend` is implemented with FastAPI. It loads the serialized model artifact, validates incoming inputs, performs preprocessing and inference, computes SHAP explanations, and exposes analytics endpoints for batch-level evaluation.
 
 ## Frontend
 
-The Next.js dashboard runs on port `3000`. It includes wafer and batch
-workflows, defect and process views, corrective-action and root-cause screens,
-and an optional OpenRouter-powered assistant.
+The frontend in `src/frontend` is implemented with Next.js and React. It presents the dashboard views for batch upload, command-center monitoring, wafer-level analysis, defect review, root-cause investigation, and corrective-action tracking.
 
-## Model Notebook
+## Model and Training Notebook
 
-`YieldSentinel_Improved_Model.ipynb` contains the experimental training flow:
-data preparation, missing-value handling, class-imbalance management,
-XGBoost/LightGBM comparison, threshold tuning, evaluation, feature importance,
-and optional model export.
+The project includes `src/YieldSentinel_Improved_Model.ipynb`, which contains the model-development workflow used to train and evaluate the classifier. The saved artifact is used at runtime by the backend without requiring a retraining step for standard local execution.
 
-## Development
+## Development Notes
 
-From the repository root, run the one-time setup and then start both services:
+The application is designed to run locally with the root setup and startup scripts:
 
 ```powershell
 .\setup.ps1
 .\start.ps1
 ```
 
-For prerequisites, environment variables, and manual commands, see the root
-[README](../README.md) and [setup guide](../docs/setup-guide.md).
-
-Do not commit real secrets from `.env` or `.env.local`, virtual environments,
-`node_modules`, `.next`, Python caches, or other build artifacts.
+For full setup and troubleshooting instructions, see the root [README.md](../README.md) and the detailed guide in [docs/setup-guide.md](../docs/setup-guide.md).
