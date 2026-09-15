@@ -5,7 +5,7 @@ import { getAnalyses } from "../../../src/lib/analysisDb";
 // Config
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BACKEND_URL = process.env.YIELDSENTINEL_BACKEND_URL ?? "http://127.0.0.1:8000";
+const BACKEND_URL = (process.env.NEXT_PUBLIC_YIELDSENTINEL_BACKEND_URL ?? process.env.YIELDSENTINEL_BACKEND_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
 const MAX_HISTORY_MESSAGES = 10;
 
 // ─────────────────────────────────────────────────────────────────────────────

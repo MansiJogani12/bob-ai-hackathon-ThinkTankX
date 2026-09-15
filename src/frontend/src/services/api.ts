@@ -1,4 +1,4 @@
-const BASE = "http://127.0.0.1:8000";
+const BASE = (process.env.NEXT_PUBLIC_YIELDSENTINEL_BACKEND_URL ?? "http://127.0.0.1:8000").replace(/\/$/, "");
 
 /* ── Types ────────────────────────────────────────── */
 
