@@ -356,13 +356,13 @@ async def predict_csv(file: UploadFile = File(...)):
         pass_rate=round(pass_count / total * 100, 2) if total else 0.0,
         fail_rate=round(fail_count / total * 100, 2) if total else 0.0,
         estimated_execution_time_ms=f"{elapsed * 1000:.2f}ms",
-        wafers=wafers,
+        wafers=wafers[:300],
     )
 
     # Persist to Supabase (fire-and-forget; never blocks the response)
     save_batch_run(
         batch_response.model_dump(exclude={"wafers"}),
-        [w.model_dump() for w in wafers],
+        [w.model_dump() for w in wafers[:300]],
     )
 
     return batch_response
