@@ -13,9 +13,13 @@ import { NextRequest, NextResponse } from "next/server";
 
 const OPENROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
 const FALLBACK_MODELS = [
+  "google/gemini-2.0-flash-lite-preview-02-05:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "deepseek/deepseek-r1-distill-llama-70b:free",
   "nvidia/nemotron-3-super-120b-a12b:free",
+  "mistralai/mistral-7b-instruct:free",
+  "qwen/qwen-2.5-coder-32b-instruct:free",
   "liquid/lfm-2.5-2.6b:free",
-  "nex-agi/nex-n2.5-mini:free",
 ];
 
 export interface CorrectiveAIRequest {
