@@ -13,7 +13,7 @@ const BACKEND = "http://127.0.0.1:8000";
 
 const BASELINES: Record<string, number> = { "0": 0, "351": 0, "352": 0.1, "353": 0, "354": 0, "355": 0 };
 
-/* SHAP bar colour: positive Ã¢â€ â€™ pushes toward FAIL (amber), negative Ã¢â€ â€™ toward PASS (emerald) */
+/* SHAP bar colour: positive â†’ pushes toward FAIL (amber), negative â†’ toward PASS (emerald) */
 const shapColor = (dir: string) => dir === "positive" ? "#f59e0b" : "#10b981";
 const shapBg    = (dir: string) => dir === "positive" ? "rgba(245,158,11,0.15)" : "rgba(16,185,129,0.15)";
 
@@ -156,6 +156,7 @@ export default function WaferPage() {
   const [error,      setError]      = useState<string | null>(null);
   const [prediction, setPrediction] = useState<string | null>(null);
   const [failProb,   setFailProb]   = useState<number | null>(null);
+  const [passProb,   setPassProb]   = useState<number | null>(null);
   const [latencyMs,  setLatencyMs]  = useState<string>("--");
   const [shap, setShap] = useState<{ feature: string; shap_value: number; direction: string }[]>([]);
   const [runTick, setRunTick] = useState(0);
@@ -210,6 +211,7 @@ export default function WaferPage() {
 
       const data = await res.json();
       setFailProb(data.fail_probability);
+      setPassProb(data.pass_probability);
       setPrediction(data.prediction);
       setLatencyMs(data.latency_ms ?? "--");
       setShap(data.top_shap_features ?? []);
@@ -536,7 +538,7 @@ export default function WaferPage() {
                       fontFamily: "ui-monospace,monospace", letterSpacing: "-0.02em" }}>
                       {hasResult
                         ? isPass
-                          ? `${(100 - (failProb! * 100)).toFixed(1)}% Passed`
+                          ? `${((passProb ?? (1 - failProb!)) * 100).toFixed(1)}% Passed`
                           : `${(failProb! * 100).toFixed(1)}% Fail Risk`
                         : "Awaiting inference"}
                     </span>

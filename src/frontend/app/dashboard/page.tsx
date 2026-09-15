@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAppContext } from "../../src/lib/store";
 import { getDashboard, getRootCauses, type DashboardResponse, type RootCausesResponse } from "../../src/services/api";
 
-/* â”€â”€ Radar sweep animation â”€â”€ */
+/* ── Radar sweep animation ── */
 const radarKeyframes = `
 @keyframes radarSweep {
   0%   { transform: translateY(-100%); opacity: 0; }
@@ -27,7 +27,7 @@ const radarKeyframes = `
 }
 `;
 
-/* â”€â”€ KPI Card â”€â”€ */
+/* ── KPI Card ── */
 function KPICard({ label, value, sub, subColor = "#f59e0b", valueColor = "#fff" }: {
   label: string; value: string; sub: string; subColor?: string; valueColor?: string;
 }) {
@@ -58,7 +58,7 @@ function KPICard({ label, value, sub, subColor = "#f59e0b", valueColor = "#fff" 
   );
 }
 
-/* â”€â”€ Root Cause Bar â”€â”€ */
+/* ── Root Cause Bar ── */
 function RCBar({ rank, label, corr, corrColor, pct, barColor }: {
   rank: string; label: string; corr: string; corrColor: string; pct: number; barColor: string;
 }) {
@@ -91,7 +91,7 @@ function RCBar({ rank, label, corr, corrColor, pct, barColor }: {
   );
 }
 
-/* â”€â”€ Batch Risk Item â”€â”€ */
+/* ── Batch Risk Item ── */
 function BatchRiskItem({ id, score, badge }: { id: string; score: string; badge: "HIGH" | "MED" | "LOW" }) {
   const badgeStyles: Record<string, { bg: string; color: string; border: string }> = {
     HIGH: { bg: "rgba(127,29,29,0.6)", color: "#f87171", border: "rgba(185,28,28,0.8)" },
@@ -121,7 +121,7 @@ function BatchRiskItem({ id, score, badge }: { id: string; score: string; badge:
   );
 }
 
-/* â”€â”€ Live latency ticker â”€â”€ */
+/* ── Live latency ticker ── */
 function useLatency() {
   const [ms, setMs] = useState("1.2");
   useEffect(() => {
@@ -144,11 +144,11 @@ export default function CommandCenter() {
     let cancelled = false;
     getDashboard()
       .then(data => { if (!cancelled) setDashboard(data); })
-      .catch(() => { /* dashboard stays null â€” UI shows "--" */ })
+      .catch(() => { /* dashboard stays null — UI shows "--" */ })
       .finally(() => { if (!cancelled) setDashLoading(false); });
     getRootCauses()
       .then(data => { if (!cancelled) setRcData(data); })
-      .catch(() => { /* rcData stays null â€” bars show "--" */ });
+      .catch(() => { /* rcData stays null — bars show "--" */ });
     return () => { cancelled = true; };
   }, []);
 
@@ -180,7 +180,7 @@ export default function CommandCenter() {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: radarKeyframes }} />
-      {/* â”€â”€ Scrollable page wrapper â”€â”€ */}
+      {/* ── Scrollable page wrapper ── */}
       <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
 
         {/* Page header */}
@@ -192,7 +192,7 @@ export default function CommandCenter() {
             </h1>
             <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4 }}>
               <span style={{ fontSize: "0.6875rem", fontFamily: "ui-monospace,monospace", fontWeight: 700,
-                letterSpacing: "0.14em", color: "#f59e0b" }}>FAB 01 / 3NM â€¢ LIVE OPERATIONS</span>
+                letterSpacing: "0.14em", color: "#f59e0b" }}>FAB 01 / 3NM • LIVE OPERATIONS</span>
               <span style={{ fontSize: "0.6875rem", color: "#374151", fontFamily: "ui-monospace,monospace" }}>//</span>
               <span style={{ fontSize: "0.6875rem", color: "#94a3b8", fontFamily: "ui-monospace,monospace" }}>NODE LOT 4022-X</span>
             </div>
@@ -213,7 +213,7 @@ export default function CommandCenter() {
           </div>
         </div>
 
-        {/* â”€â”€ 5 KPI Cards â”€â”€ */}
+        {/* ── 5 KPI Cards ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
           <KPICard label="Current Yield" value={yieldPct} valueColor="#fff"
             sub={<><span style={{ display:"inline-block", width:6, height:6, borderRadius:"50%", background:"#f59e0b", marginRight:4 }} />{batchResult ? `${batchResult.total_wafers} wafers analyzed` : "Awaiting batch data"}</>  as any} />
@@ -231,7 +231,7 @@ export default function CommandCenter() {
             subColor={batchResult ? "#4ade80" : "#64748b"} />
         </div>
 
-        {/* â”€â”€ Middle: Yield Trend + Active Alert â”€â”€ */}
+        {/* ── Middle: Yield Trend + Active Alert ── */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 20 }}>
           {/* Yield trend chart */}
           <div style={{ background: "rgba(10,13,18,0.9)", border: "1px solid rgba(20,26,36,1)",
@@ -246,7 +246,7 @@ export default function CommandCenter() {
               <span style={{ display:"inline-flex", alignItems:"center", padding:"2px 8px", borderRadius:4,
                 fontSize:"0.6875rem", fontFamily:"ui-monospace,monospace", fontWeight:500,
                 color:"#f87171", background:"rgba(239,68,68,0.1)", border:"1px solid rgba(239,68,68,0.2)" }}>
-                â–¼ Dropping
+                ▼ Dropping
               </span>
             </div>
 
@@ -379,7 +379,7 @@ export default function CommandCenter() {
           </div>
         </div>
 
-        {/* â”€â”€ Bottom: Root Cause Ranking + Upcoming Batch Risk â”€â”€ */}
+        {/* ── Bottom: Root Cause Ranking + Upcoming Batch Risk ── */}
         <div style={{ display: "grid", gridTemplateColumns: "7fr 5fr", gap: 20 }}>
           {/* Root Cause Ranking */}
           <div style={{ background: "rgba(10,13,18,0.9)", border: "1px solid rgba(20,26,36,1)",
@@ -435,7 +435,7 @@ export default function CommandCenter() {
                 cursor: "pointer", transition: "color 0.15s" }}
                 onMouseEnter={e => (e.currentTarget.style.color = "#f59e0b")}
                 onMouseLeave={e => (e.currentTarget.style.color = "#94a3b8")}>
-                Inspect Weights â†’
+                Inspect Weights →
               </button>
             </div>
           </div>
@@ -450,7 +450,7 @@ export default function CommandCenter() {
                 <Link href="/dashboard/batchrisk" style={{ fontSize: "0.75rem", fontFamily: "ui-monospace,monospace",
                   color: "#f59e0b", textDecoration: "none", display: "flex", alignItems: "center", gap: 4,
                   transition: "color 0.15s" }}>
-                  <span>View All</span><span>â†’</span>
+                  <span>View All</span><span>→</span>
                 </Link>
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -476,7 +476,7 @@ export default function CommandCenter() {
             <div style={{ marginTop: 12, paddingTop: 8, fontSize: "0.625rem",
               fontFamily: "ui-monospace,monospace", color: "#64748b", textAlign: "right" }}>
               {batchResult
-                ? `Queue: ${batchResult.total_wafers} wafers â€” ${batchResult.estimated_execution_time_ms} exec`
+                ? `Queue: ${batchResult.total_wafers} wafers — ${batchResult.estimated_execution_time_ms} exec`
                 : "Queue Buffer: Awaiting Data"}
             </div>
           </div>

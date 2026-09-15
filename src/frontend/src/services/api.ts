@@ -27,6 +27,7 @@ export interface ShapFeature {
 export interface PredictResponse {
   wafer_id: string;
   prediction: string; // "PASS" | "FAIL"
+  pass_probability: number;
   fail_probability: number;
   anomaly_score: number;
   threshold_used: number;
@@ -37,6 +38,7 @@ export interface PredictResponse {
 export interface WaferResult {
   wafer_id: string;
   prediction: string;
+  pass_probability: number;
   fail_probability: number;
   anomaly_score: number;
 }

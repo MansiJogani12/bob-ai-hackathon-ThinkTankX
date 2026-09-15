@@ -28,6 +28,7 @@ import { checkHealth } from "../services/api";
 export interface WaferResult {
   wafer_id: string;
   prediction: string;          // "PASS" | "FAIL"
+  pass_probability: number;
   fail_probability: number;
   anomaly_score: number;
 }
@@ -76,18 +77,19 @@ const StoreContext = createContext<StoreValue>({
 /* ── Provider ───────────────────────────────────────────────────────────── */
 
 export function StoreProvider({ children }: { children: ReactNode }) {
-  const [batchResult, setBatchResultState] = useState<BatchResult | null>(() => {
-    if (typeof window === "undefined") return null;
-    try {
-      const saved = sessionStorage.getItem("yieldsentinel_batchResult");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [batchResult, setBatchResultState] = useState<BatchResult | null>(null);
   const [batchWaferSensors, setBatchWaferSensors] = useState<WaferSensors[]>([]);
   const [selectedWaferSensors, setSelectedWaferSensors] = useState<WaferSensors | null>(null);
   const [isBackendOnline, setIsBackendOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem("yieldsentinel_batchResult");
+      if (saved) setBatchResultState(JSON.parse(saved));
+    } catch {
+      // Ignore invalid or unavailable session storage.
+    }
+  }, []);
 
   const setBatchResult = useCallback((r: BatchResult | null) => {
     setBatchResultState(r);

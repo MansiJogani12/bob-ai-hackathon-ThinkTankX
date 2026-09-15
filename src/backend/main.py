@@ -113,6 +113,7 @@ class ShapFeature(BaseModel):
 class PredictResponse(BaseModel):
     wafer_id: str
     prediction: str          # "PASS" | "FAIL"
+    pass_probability: float
     fail_probability: float
     anomaly_score: float     # same as fail_probability, aliased for frontend
     threshold_used: float
@@ -123,6 +124,7 @@ class PredictResponse(BaseModel):
 class WaferResult(BaseModel):
     wafer_id: str
     prediction: str
+    pass_probability: float
     fail_probability: float
     anomaly_score: float
 
@@ -215,8 +217,11 @@ def predict(req: PredictRequest):
     t0 = time.perf_counter()
 
     X = _build_input_row(req.sensors, pkg)
-    proba = float(pkg["model"].predict_proba(X)[0, 1])
-    prediction = "FAIL" if proba >= threshold else "PASS"
+    probabilities = pkg["model"].predict_proba(X)[0]
+    classes = list(pkg["model"].classes_)
+    pass_prob = float(probabilities[classes.index(0)])
+    fail_prob = float(probabilities[classes.index(1)])
+    prediction = "FAIL" if fail_prob >= threshold else "PASS"
 
     # SHAP values
     shap_features: list[ShapFeature] = []
@@ -235,8 +240,9 @@ def predict(req: PredictRequest):
     return PredictResponse(
         wafer_id=f"WFR-{int(time.time()) % 100000:05d}",
         prediction=prediction,
-        fail_probability=round(proba, 4),
-        anomaly_score=round(proba, 4),
+        pass_probability=round(pass_prob, 4),
+        fail_probability=round(fail_prob, 4),
+        anomaly_score=round(fail_prob, 4),
         threshold_used=threshold,
         latency_ms=f"{latency * 1000:.2f}ms",
         top_shap_features=shap_features,
@@ -288,18 +294,26 @@ async def predict_csv(file: UploadFile = File(...)):
 
     t0 = time.perf_counter()
     X_imp = pkg["imputer"].transform(df_aligned)
-    probas = pkg["model"].predict_proba(X_imp)[:, 1]
+    all_probas = pkg["model"].predict_proba(X_imp)
+    classes = list(pkg["model"].classes_)
+    pass_idx = classes.index(0)
+    fail_idx = classes.index(1)
+    pass_probas = all_probas[:, pass_idx]
+    fail_probas = all_probas[:, fail_idx]
     elapsed = time.perf_counter() - t0
 
     wafers: list[WaferResult] = []
-    for i, p in enumerate(probas):
-        pred = "FAIL" if p >= threshold else "PASS"
+    for i in range(len(fail_probas)):
+        fail_prob = float(fail_probas[i])
+        pass_prob = float(pass_probas[i])
+        pred = "FAIL" if fail_prob >= threshold else "PASS"
         wafers.append(
             WaferResult(
                 wafer_id=f"WAFER-{i + 1}",
                 prediction=pred,
-                fail_probability=round(float(p), 4),
-                anomaly_score=round(float(p), 4),
+                pass_probability=round(pass_prob, 4),
+                fail_probability=round(fail_prob, 4),
+                anomaly_score=round(fail_prob, 4),
             )
         )
 
@@ -316,7 +330,7 @@ async def predict_csv(file: UploadFile = File(...)):
     _latest_batch = {
         "features": df_aligned.copy(),
         "target": target_values,
-        "probas": np.asarray(probas, dtype=float),
+        "probas": np.asarray(fail_probas, dtype=float),
         "predictions": np.asarray([1 if w.prediction == "FAIL" else 0 for w in wafers], dtype=int),
         "elapsed_ms": elapsed * 1000,
         "total": total,
@@ -344,6 +358,65 @@ def _require_analysis() -> dict[str, Any]:
     if _latest_batch is None:
         raise HTTPException(status_code=404, detail="Upload a CSV batch before requesting analytics.")
     return _latest_batch
+
+
+@app.get("/analysis-summary", tags=["Analytics"])
+def analysis_summary():
+    """Compact summary of the latest batch analysis — consumed by the chatbot.
+
+    Returns 404 with a human-readable message when no batch has been run yet
+    so the chatbot can honestly tell the user there is no data yet.
+    """
+    if _latest_batch is None:
+        return {
+            "available": False,
+            "message": "No batch analysis has been performed yet. Please upload a CSV file and run batch prediction first.",
+        }
+
+    batch = _latest_batch
+    total: int = batch["total"]
+    pass_count: int = batch["pass_count"]
+    fail_count: int = batch["fail_count"]
+    probas: np.ndarray = np.asarray(batch["probas"], dtype=float)
+    threshold: float = float(_pkg.get("threshold", 0.5))
+
+    # Top-5 highest fail-probability wafers
+    top_fail_indices = np.argsort(probas)[::-1][:5]
+    top_fail_wafers = [
+        {
+            "wafer_id": f"WAFER-{int(idx) + 1}",
+            "prediction": "FAIL" if probas[idx] >= threshold else "PASS",
+            "fail_probability": round(float(probas[idx]), 4),
+            "pass_probability": round(float(1.0 - probas[idx]), 4),
+        }
+        for idx in top_fail_indices
+    ]
+
+    # All FAIL wafers (id + probabilities), capped at 200 for payload size
+    fail_indices = [i for i, p in enumerate(probas) if p >= threshold]
+    fail_wafers = [
+        {
+            "wafer_id": f"WAFER-{i + 1}",
+            "fail_probability": round(float(probas[i]), 4),
+            "pass_probability": round(float(1.0 - probas[i]), 4),
+        }
+        for i in fail_indices[:200]
+    ]
+
+    return {
+        "available": True,
+        "total_wafers": total,
+        "pass_count": pass_count,
+        "fail_count": fail_count,
+        "pass_percentage": round(pass_count / total * 100, 2) if total else 0.0,
+        "fail_percentage": round(fail_count / total * 100, 2) if total else 0.0,
+        "threshold": threshold,
+        "model_name": _pkg.get("model_name", "YieldSentinel XGBoost"),
+        "total_features": len(_pkg.get("feature_names", [])),
+        "top_fail_wafers": top_fail_wafers,
+        "fail_wafers": fail_wafers,
+        "fail_wafers_truncated": len(fail_indices) > 200,
+    }
 
 
 def _root_cause_rows(batch: dict[str, Any]) -> list[dict[str, Any]]:

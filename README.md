@@ -136,6 +136,7 @@ Install dependencies once:
 cd src/backend
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+
 cd ..\frontend
 npm install
 ```

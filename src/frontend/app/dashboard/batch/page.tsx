@@ -1,10 +1,10 @@
-﻿"use client";
+"use client";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAppContext } from "../../../src/lib/store";
 import { getDashboard, type DashboardResponse } from "../../../src/services/api";
 
-/* â”€â”€ inline styles to avoid any CSS conflicts â”€â”€ */
+/* ── inline styles to avoid any CSS conflicts ── */
 const S = {
   amber: "#E59B38",
   amberHover: "#F5A947",
@@ -16,7 +16,7 @@ const S = {
   textDim: "#A1A1AA",
 } as const;
 
-/* â”€â”€ Radar beacon dot â”€â”€ */
+/* ── Radar beacon dot ── */
 function RadarDot({ size = 8, color = "#10b981" }: { size?: number; color?: string }) {
   return (
     <span style={{ position: "relative", display: "inline-flex", width: size, height: size, flexShrink: 0 }}>
@@ -36,7 +36,7 @@ function RadarDot({ size = 8, color = "#10b981" }: { size?: number; color?: stri
   );
 }
 
-/* â”€â”€ Pulsing ping dot â”€â”€ */
+/* ── Pulsing ping dot ── */
 function PingDot({ color = "#10b981", size = 6 }: { color?: string; size?: number }) {
   return (
     <span style={{ position: "relative", display: "inline-flex", width: size, height: size, flexShrink: 0 }}>
@@ -48,7 +48,7 @@ function PingDot({ color = "#10b981", size = 6 }: { color?: string; size?: numbe
   );
 }
 
-/* â”€â”€ Striped animated progress bar â”€â”€ */
+/* ── Striped animated progress bar ── */
 function StripedBar({ pct }: { pct: number }) {
   return (
     <div style={{ width: "100%", background: "rgba(63,63,70,0.6)", borderRadius: 999,
@@ -65,7 +65,7 @@ function StripedBar({ pct }: { pct: number }) {
   );
 }
 
-/* â”€â”€ Laser scanner line â”€â”€ */
+/* ── Laser scanner line ── */
 function LaserScanner() {
   return (
     <motion.div
@@ -82,7 +82,7 @@ function LaserScanner() {
   );
 }
 
-/* â”€â”€ Check glow item â”€â”€ */
+/* ── Check glow item ── */
 function CheckRow({ label, badge, badgeColor = "rgba(255,255,255,0.08)", badgeText = "#71717A", glowDelay = 0 }:
   { label: string; badge: string; badgeColor?: string; badgeText?: string; glowDelay?: number }) {
   return (
@@ -95,7 +95,7 @@ function CheckRow({ label, badge, badgeColor = "rgba(255,255,255,0.08)", badgeTe
           animate={{ filter: ["drop-shadow(0 0 0px transparent)", "drop-shadow(0 0 6px rgba(52,211,153,0.8))", "drop-shadow(0 0 0px transparent)"],
             color: ["#34d399", "#6ee7b7", "#34d399"] }}
           transition={{ duration: 3, repeat: Infinity, delay: glowDelay }}>
-          âœ“
+          ✓
         </motion.span>
         {label}
       </span>
@@ -109,7 +109,7 @@ function CheckRow({ label, badge, badgeColor = "rgba(255,255,255,0.08)", badgeTe
 
 const BACKEND = "http://127.0.0.1:8000";
 
-/* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ─────────────────────────────────────────────────── */
 export default function BatchPage() {
   const { setBatchResult, batchResult, setBatchWaferSensors } = useAppContext();
   const [latency, setLatency] = useState(14);
@@ -142,7 +142,7 @@ export default function BatchPage() {
     if (!file) return;
     setUploadedFile(file);
     const sizeMB = (file.size / 1024 / 1024).toFixed(1);
-    setFileInfo({ name: file.name, rows: "â€”", size: `${sizeMB} MB` });
+    setFileInfo({ name: file.name, rows: "—", size: `${sizeMB} MB` });
     setError(null);
 
     const reader = new FileReader();
@@ -171,7 +171,7 @@ export default function BatchPage() {
     setError(null);
 
     if (!uploadedFile) {
-      /* No file selected â€” show an error, don't proceed */
+      /* No file selected — show an error, don't proceed */
       setError("Please select a CSV file before running batch prediction.");
       return;
     }
@@ -217,7 +217,7 @@ export default function BatchPage() {
         .arrow-pulse { animation:arrowShift 1.5s ease-in-out infinite; }
       ` }} />
 
-      {/* â”€â”€ Page title â”€â”€ */}
+      {/* ── Page title ── */}
       <div style={{ marginBottom: 28 }}>
         <div style={{ fontFamily: "monospace", fontSize: "0.7rem", fontWeight: 600, letterSpacing: "0.2em",
           textTransform: "uppercase", color: S.amber, marginBottom: 8,
@@ -235,7 +235,7 @@ export default function BatchPage() {
         </p>
       </div>
 
-      {/* â”€â”€ Error banner â”€â”€ */}
+      {/* ── Error banner ── */}
       {error && (
         <div style={{
           padding: "10px 14px", borderRadius: 6, background: "rgba(127,29,29,0.4)",
@@ -243,11 +243,11 @@ export default function BatchPage() {
           fontFamily: "ui-monospace,monospace", fontSize: "0.65rem", letterSpacing: "0.04em",
           marginBottom: 16,
         }}>
-          âš  {error}
+          ⚠ {error}
         </div>
       )}
 
-      {/* â”€â”€ Banner â”€â”€ */}
+      {/* ── Banner ── */}
       <div style={{ padding: "14px 16px", borderRadius: 8,
         background: "#14120E", border: `1px solid rgba(229,155,56,0.3)`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
@@ -271,10 +271,10 @@ export default function BatchPage() {
         </span>
       </div>
 
-      {/* â”€â”€ Two column grid â”€â”€ */}
+      {/* ── Two column grid ── */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, marginBottom: 28 }}>
 
-        {/* â”€â”€ Upload card â”€â”€ */}
+        {/* ── Upload card ── */}
         <div className="card-hover" style={{
           background: S.card, borderRadius: 12, border: `1px solid ${S.cardBorder}`,
           padding: 24, display: "flex", flexDirection: "column", justifyContent: "space-between",
@@ -345,7 +345,7 @@ export default function BatchPage() {
 
             {/* meta tags */}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginTop: 16 }}>
-              {[["Wafers", fileInfo ? "â€”" : "â€”"],["Sensors","590"],["Format","UTF-8 CSV"]].map(([k,v]) => (
+              {[["Wafers", fileInfo ? "—" : "—"],["Sensors","590"],["Format","UTF-8 CSV"]].map(([k,v]) => (
                 <div key={k} style={{ background: S.surface, border: `1px solid ${S.cardBorder}`,
                   padding: "8px", borderRadius: 4, textAlign: "center", fontFamily: "monospace",
                   cursor: "default", transition: "all 0.2s" }}
@@ -403,7 +403,7 @@ export default function BatchPage() {
                   <motion.span key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                     style={{ display: "flex", alignItems: "center", gap: 8, color: "#000", fontWeight: 700 }}>
                     <span>PREDICTION COMPLETE</span>
-                    <span style={{ fontSize: "1rem" }}>âœ“</span>
+                    <span style={{ fontSize: "1rem" }}>✓</span>
                   </motion.span>
                 )}
               </AnimatePresence>
@@ -411,7 +411,7 @@ export default function BatchPage() {
           </div>
         </div>
 
-        {/* â”€â”€ Batch Summary card â”€â”€ */}
+        {/* ── Batch Summary card ── */}
         <div className="card-hover" style={{
           background: S.card, borderRadius: 12, border: `1px solid ${S.cardBorder}`,
           padding: 24, display: "flex", flexDirection: "column", justifyContent: "space-between",
@@ -444,7 +444,7 @@ export default function BatchPage() {
             </p>
 
             {batchResult ? (
-              /* â”€â”€ Real results: 2Ã—2 KPI grid â”€â”€ */
+              /* ── Real results: 2×2 KPI grid ── */
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                 {[
                   { label: "Total Wafers", value: String(batchResult.total_wafers), color: "#fff", bg: S.surface, border: S.cardBorder },
@@ -462,12 +462,12 @@ export default function BatchPage() {
                 ))}
               </div>
             ) : (
-              /* â”€â”€ Pre-upload: static telemetry â”€â”€ */
+              /* ── Pre-upload: static telemetry ── */
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
                 <StatRow
                   label="Input Schema Match"
                   value={<span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    100% Validated <span style={{ color: "#34d399", fontSize: "0.75rem" }}>âœ“</span>
+                    100% Validated <span style={{ color: "#34d399", fontSize: "0.75rem" }}>✓</span>
                   </span>}
                   right={<>
                     <span style={{ color: "#34d399", fontSize: "0.75rem", fontWeight: 600,
@@ -535,14 +535,14 @@ export default function BatchPage() {
                 display: "flex", alignItems: "center", gap: 4 }}
                 onMouseEnter={e => ((e.currentTarget as HTMLElement).style.color = S.amberHover)}
                 onMouseLeave={e => ((e.currentTarget as HTMLElement).style.color = S.amber)}>
-                Export Protocol <span style={{ fontSize: "0.75rem" }}>â†—</span>
+                Export Protocol <span style={{ fontSize: "0.75rem" }}>↗</span>
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* â”€â”€ Wafer Predictions Table (appears after batch run) â”€â”€ */}
+      {/* ── Wafer Predictions Table (appears after batch run) ── */}
       {batchResult && (batchResult.wafers?.length ?? 0) > 0 && (
         <div style={{ marginTop: 28, background: S.card, borderRadius: 12,
           border: `1px solid ${S.cardBorder}`, overflow: "hidden",
@@ -558,7 +558,7 @@ export default function BatchPage() {
               onClick={() => {
                 const rows = ["#,Wafer ID,Status,Fail Probability,Pass Probability",
                   ...(batchResult.wafers ?? []).map((w, i) =>
-                    `${i + 1},${w.wafer_id},${w.prediction},${w.fail_probability.toFixed(2)}%,${(100 - w.fail_probability).toFixed(2)}%`
+                    `${i + 1},${w.wafer_id},${w.prediction},${(w.fail_probability * 100).toFixed(2)}%,${(w.pass_probability * 100).toFixed(2)}%`
                   )].join("\n");
                 const blob = new Blob([rows], { type: "text/csv" });
                 const url = URL.createObjectURL(blob);
@@ -638,7 +638,7 @@ export default function BatchPage() {
         </div>
       )}
 
-      {/* â”€â”€ Quick metrics strip (real data) â”€â”€ */}
+      {/* ── Quick metrics strip (real data) ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
         {[
           {
@@ -649,8 +649,8 @@ export default function BatchPage() {
               ? `${dashboard.current_yield_pct.toFixed(1)}%`
               : "--",
             sub: batchResult
-              ? `â†‘ ${batchResult.pass_count} passed`
-              : "â†‘ From dashboard",
+              ? `↑ ${batchResult.pass_count} passed`
+              : "↑ From dashboard",
             subColor: "#34d399", dot: "#10b981", hoverColor: "#6ee7b7",
           },
           {
@@ -713,10 +713,10 @@ export default function BatchPage() {
             </div>
             <div style={{ fontFamily: "monospace", fontSize: "0.69rem", color: m.subColor, marginTop: 4,
               display: "flex", alignItems: "center", gap: 4 }}>
-              {m.sub.startsWith("â†‘") && (
-                <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>â†‘</motion.span>
+              {m.sub.startsWith("↑") && (
+                <motion.span animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>↑</motion.span>
               )}
-              {m.sub.replace("â†‘ ", "")}
+              {m.sub.replace("↑ ", "")}
             </div>
           </div>
         ))}

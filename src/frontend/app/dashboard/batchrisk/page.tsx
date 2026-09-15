@@ -17,10 +17,10 @@ function wafersToDisplay(result: ReturnType<typeof useAppContext>["batchResult"]
 }> {
   if (!result) return [];
   return (result.wafers ?? []).map(w => {
-    const riskPct = w.fail_probability;
+    const riskPct = w.fail_probability * 100;
     const badge: "HIGH" | "MEDIUM" | "LOW" =
       riskPct >= 30 ? "HIGH" : riskPct >= 10 ? "MEDIUM" : "LOW";
-    return { id: w.wafer_id, risk: riskPct, yield: 100 - riskPct, badge };
+    return { id: w.wafer_id, risk: riskPct, yield: w.pass_probability * 100, badge };
   });
 }
 
@@ -65,7 +65,7 @@ export default function BatchRiskPage() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 28 }}>
 
-      {/* â”€â”€ Breadcrumb ribbon â”€â”€ */}
+      {/* ── Breadcrumb ribbon ── */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
         fontSize: "0.6875rem", fontFamily: "ui-monospace,monospace", color: "#64748b",
         paddingBottom: 12, borderBottom: "1px solid rgba(20,23,32,1)" }}>
@@ -86,7 +86,7 @@ export default function BatchRiskPage() {
         </div>
       </div>
 
-      {/* â”€â”€ Title â”€â”€ */}
+      {/* ── Title ── */}
       <div>
         <h1 style={{ fontSize: "clamp(1.25rem,2.5vw,1.875rem)", fontWeight: 700, color: "#fff",
           letterSpacing: "-0.02em", fontFamily: "Inter,sans-serif", margin: 0 }}>Upcoming Batch Risk</h1>
@@ -94,7 +94,7 @@ export default function BatchRiskPage() {
           letterSpacing: "0.14em", color: "#f59e0b", marginTop: 4 }}>Predictive Yield Engine</p>
       </div>
 
-      {/* â”€â”€ 4 KPI cards â”€â”€ */}
+      {/* ── 4 KPI cards ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
         {[
           { label: "Total Wafers",  value: batchResult ? String(batchResult.total_wafers) : dashboard ? String(dashboard.total_wafers ?? WAFERS.length) : "--", valueColor: "#fff", sub: batchResult || dashboard ? "Batch analyzed" : "Awaiting data", subColor: "#94a3b8" },
@@ -119,7 +119,7 @@ export default function BatchRiskPage() {
         ))}
       </div>
 
-      {/* â”€â”€ Wafer card grid â€” empty state â”€â”€ */}
+      {/* ── Wafer card grid — empty state ── */}
       {WAFERS.length === 0 && (
         <div style={{ padding: "48px 24px", textAlign: "center",
           background: "rgba(14,16,21,1)", borderRadius: 12,
@@ -132,7 +132,7 @@ export default function BatchRiskPage() {
         </div>
       )}
 
-      {/* â”€â”€ Wafer card grid â”€â”€ */}
+      {/* ── Wafer card grid ── */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
         {WAFERS.map((w, i) => {
           const bs = BADGE_STYLES[w.badge as Badge];
@@ -193,7 +193,7 @@ export default function BatchRiskPage() {
         })}
       </div>
 
-      {/* â”€â”€ Batch metadata footer â”€â”€ */}
+      {/* ── Batch metadata footer ── */}
       <div style={{ paddingTop: 16, borderTop: "1px solid rgba(20,23,32,1)",
         display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between",
         gap: 16, fontSize: "0.75rem", fontFamily: "ui-monospace,monospace", color: "#64748b" }}>
