@@ -273,7 +273,7 @@ function Navbar({ theme, onToggle }: { theme: Theme; onToggle: () => void }) {
         <ThemeToggle theme={theme} onToggle={onToggle} />
         <MoonIcon />
         <a
-          href="/dashboard"
+          href="/login"
           style={{
             background: "var(--gold)",
             color: "#09090b",
@@ -385,7 +385,7 @@ function HeroSection() {
               AI-powered semiconductor yield intelligence that pinpoints root causes before defects propagate across your fab.
             </p>
             <div style={{ display: "flex", gap: 12, marginTop: 26, flexWrap: "wrap" }}>
-              <a href="/dashboard" style={{ background: "var(--gold)", color: "#080808", borderRadius: 6, fontSize: "0.72rem", fontWeight: 700, padding: "10px 22px", textDecoration: "none", display: "inline-block", transition: "opacity 0.18s" }}
+              <a href="/login" style={{ background: "var(--gold)", color: "#080808", borderRadius: 6, fontSize: "0.72rem", fontWeight: 700, padding: "10px 22px", textDecoration: "none", display: "inline-block", transition: "opacity 0.18s" }}
                 onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "0.82")}
                 onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")}>
                 Launch Analyzer →

@@ -1,9 +1,10 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "../../src/lib/store";
+import { supabase } from "../../src/lib/supabase";
 
 /* ── CSS keyframes + light-mode filter ── */
 const globalStyles = `
@@ -132,9 +133,21 @@ function useClock() {
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const path = usePathname();
+  const router = useRouter();
   const latency = useLatency();
   const clock = useClock();
   const { isBackendOnline: backendOnline } = useStore();
+
+  /* ── Auth guard: redirect to /login if no active session ── */
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => {
+      if (!data.session) router.replace("/login");
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) router.replace("/login");
+    });
+    return () => subscription.unsubscribe();
+  }, [router]);
 
   /* ── Theme toggle ── */
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -297,10 +310,22 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 OPERATOR-91
               </span>
             </div>
-            <span style={{
-              fontSize: "0.5625rem", padding: "2px 6px", borderRadius: 4,
-              background: "rgba(20,26,36,1)", color: "#94a3b8", fontFamily: "ui-monospace,monospace",
-            }}>SECURE</span>
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                router.push("/login");
+              }}
+              style={{
+                fontSize: "0.5625rem", padding: "2px 6px", borderRadius: 4,
+                background: "rgba(20,26,36,1)", color: "#f59e0b", fontFamily: "ui-monospace,monospace",
+                border: "1px solid rgba(245,158,11,0.2)", letterSpacing: "0.06em",
+                cursor: "pointer", transition: "border-color 0.15s",
+              }}
+              onMouseEnter={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.6)")}
+              onMouseLeave={e => (e.currentTarget.style.borderColor = "rgba(245,158,11,0.2)")}
+            >
+              LOGOUT
+            </button>
           </div>
         </div>
       </aside>

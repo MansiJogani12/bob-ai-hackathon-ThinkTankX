@@ -20,8 +20,13 @@ from __future__ import annotations
 import io
 import os
 import time
+from dotenv import load_dotenv
+load_dotenv()  # loads src/backend/.env into os.environ
 from pathlib import Path
 from typing import Any
+
+# Supabase persistence — optional, degrades gracefully if credentials absent
+from supabase_client import save_prediction, save_batch_run  # noqa: E402
 
 import joblib
 import numpy as np
@@ -237,7 +242,7 @@ def predict(req: PredictRequest):
 
     latency = time.perf_counter() - t0
 
-    return PredictResponse(
+    response = PredictResponse(
         wafer_id=f"WFR-{int(time.time()) % 100000:05d}",
         prediction=prediction,
         pass_probability=round(pass_prob, 4),
@@ -247,6 +252,11 @@ def predict(req: PredictRequest):
         latency_ms=f"{latency * 1000:.2f}ms",
         top_shap_features=shap_features,
     )
+
+    # Persist to Supabase (fire-and-forget; never blocks the response)
+    save_prediction(response.model_dump(exclude={"top_shap_features"}))
+
+    return response
 
 
 @app.post("/predict-csv", response_model=BatchPredictResponse, tags=["Inference"])
@@ -339,7 +349,7 @@ async def predict_csv(file: UploadFile = File(...)):
         "feature_names": feature_names,
     }
 
-    return BatchPredictResponse(
+    batch_response = BatchPredictResponse(
         total_wafers=total,
         pass_count=pass_count,
         fail_count=fail_count,
@@ -348,6 +358,14 @@ async def predict_csv(file: UploadFile = File(...)):
         estimated_execution_time_ms=f"{elapsed * 1000:.2f}ms",
         wafers=wafers,
     )
+
+    # Persist to Supabase (fire-and-forget; never blocks the response)
+    save_batch_run(
+        batch_response.model_dump(exclude={"wafers"}),
+        [w.model_dump() for w in wafers],
+    )
+
+    return batch_response
 
 
 # ─────────────────────────────────────────────────────────────────────────────
