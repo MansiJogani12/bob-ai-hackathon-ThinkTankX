@@ -13,7 +13,7 @@
 
 ---
 
-## 🎯 Problem Statement
+## 🎯 Problem Statement 
 
 Semiconductor fabs lose significant yield and revenue when wafer defects are detected too late. Manufacturing teams work with high-volume sensor data and wafer maps, but the signal-to-noise ratio is high and the process of identifying root causes is slow, manual, and inconsistent.
 
