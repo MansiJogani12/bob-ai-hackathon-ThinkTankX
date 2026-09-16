@@ -2,57 +2,59 @@
 
 ## What We Built
 
-YieldSentinel AI is a wafer-yield intelligence prototype built around a trained XGBoost classifier and a dashboard for operational review. The project brings together three practical capabilities that matter in semiconductor manufacturing: risk prediction, root-cause explanation, and batch-level review.
+YieldSentinel AI is a wafer-yield analysis tool for semiconductor process and quality engineers. It helps teams identify wafers and batches that may fail, understand which sensor signals contribute most to that risk, and organize the next investigation in one dashboard.
 
-The repository contains the implemented application, including:
-
-- a FastAPI backend that loads a trained model package and accepts sensor inputs or batch CSV uploads
-- a Next.js frontend dashboard for review of wafer risk, defect views, root-cause information, and corrective-action tracking
-- a model-training workflow and serialized model artifact used for local inference and demo validation
-
-This is a working proof-of-concept based on the actual code in the repository, not a generic dashboard shell.
+A user can submit sensor values for one wafer or upload a CSV containing multiple wafers. The system returns PASS or FAIL predictions, probability scores, batch-level risk summaries, and feature explanations. The dashboard also includes views for process trends, root causes, defect patterns, and corrective actions. The core workflow runs locally with the included model and sample dataset; Supabase and the conversational assistant are optional integrations.
 
 ## How It Works
 
-1. The backend loads the trained model and preprocessing components from the serialized package in `src/backend/yieldsentinel_best_model.pkl`.
-2. When a user submits a single wafer or a batch CSV, the backend aligns the input columns to the trained feature set, imputes missing values, and computes pass/fail probabilities.
-3. The model returns prediction probabilities and the FastAPI service uses a threshold to assign PASS or FAIL for each wafer.
-4. SHAP values are calculated to rank the most influential sensors or process signals pushing the outcome in a particular direction.
-5. The dashboard summarizes the latest batch, shows at-risk wafers, and displays operational views for root causes, defect patterns, corrective actions, and process correlation.
-6. Engineers can use the output to prioritize which wafers or batches require investigation and to understand the strongest contributing factors behind likely failures.
+1. The engineer opens the Next.js dashboard and enters single-wafer sensor values or uploads a batch CSV.
+2. The frontend sends the request to the FastAPI backend through the `/predict` or `/predict-csv` endpoint.
+3. The backend aligns the incoming data with the feature schema saved in `yieldsentinel_best_model.pkl`.
+4. Missing sensor values are filled using the median imputer stored with the trained model.
+5. The XGBoost classifier calculates PASS and FAIL probabilities, and the configured threshold determines the final prediction.
+6. SHAP ranks the strongest sensor or process-signal contributors for single-wafer predictions so engineers can focus their investigation.
+7. The backend returns prediction and analytics data for the dashboard, including batch risk, root-cause, defect-pattern, and corrective-action views.
+8. When configured, Supabase stores analysis results and OpenRouter provides optional conversational assistance based on the current analysis.
 
-## Why This Solution Matters
+## Architecture Diagram
 
-The strongest differentiator in this project is that it does not stop at a binary classification. It combines prediction with explanation and operational context:
+> See [`architecture.md`](architecture.md) for the detailed diagram.
 
-- the model estimates risk for each wafer or batch
-- SHAP features show which inputs matter most
-- the dashboard surfaces those outputs in a way that is understandable to engineers
-- the workflow supports investigation, not just alerting
-
-This is valuable in semiconductor operations because process teams need to do more than know that something failed; they need to know what to investigate next and which signals are most relevant.
-
-## Architecture Summary
-
-The project is intentionally simple and direct:
-
-- the frontend collects user input and presents risk data
-- the backend performs model inference and analytics
-- the trained model package stores the learned logic and preprocessing objects
-- optional OpenRouter and Supabase integrations are available only when configured, and they are not required for core operation
+```
+[Engineer]
+     |
+     v
+[Next.js Dashboard]
+     |
+     | REST requests and CSV upload
+     v
+[FastAPI Backend] --> [Feature Alignment + Median Imputation]
+     |                                  |
+     |                                  v
+     |                         [XGBoost Model Package]
+     |                                  |
+     |                                  v
+     |                         [PASS/FAIL + Risk Scores]
+     |                                  |
+     |                                  v
+     |                         [SHAP Explanations]
+     |
+     +--> [Dashboard Analytics]
+     +--> [Optional Supabase Persistence]
+     +--> [Optional OpenRouter Assistant]
+```
 
 ## Key Design Decisions
 
 | Decision | Rationale |
 |---|---|
-| Use a packaged model artifact with preprocessing objects | Keeps the backend runnable without retraining for normal local demo and validation workflows |
-| Use SHAP for top feature explanations | Helps translate model output into process-relevant signals engineers can investigate |
-| Keep analytics in the backend and dashboard views in the frontend | Separates prediction logic from presentation and makes the API reusable |
-| Support CSV batch uploads | Allows quick screening of multiple wafers before deeper investigation |
-| Keep optional AI and Supabase integrations non-blocking | The core product works without them; they do not create a hard dependency |
+| Use a packaged model artifact | The backend can run the included model without retraining during every local demo or deployment. |
+| Align incoming data to the stored feature schema | Single-wafer payloads and CSV uploads can contain missing or differently ordered columns without changing the model contract. |
+| Median-impute missing sensor values | The same preprocessing configuration used during training is applied during inference. |
+| Use SHAP for explanations | Engineers can see which signals contributed most to a prediction instead of receiving only a binary result. |
+| Keep optional integrations non-blocking | Core wafer and batch analysis remains usable without Supabase or an OpenRouter API key. |
 
-## IBM Hackathon Context
+## IBM Technologies Used
 
-This project was built as a submission for the IBM Bob AI Hackathon using the semiconductor yield challenge as its context. The implementation in this repository is a functional proof of concept based on the actual backend, frontend, and model artifacts present in the codebase.
-
-No additional IBM platform integrations were added beyond what is already present in the repository, and all claims in this documentation are limited to the implemented functionality.
+No IBM platform technology is directly integrated into the current implementation. The project was created for the IBM Bob AI Hackathon, but its implemented runtime stack uses FastAPI, Next.js, XGBoost, SHAP, Supabase, and optional OpenRouter rather than watsonx.ai or another IBM Cloud service.

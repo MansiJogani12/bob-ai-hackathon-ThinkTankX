@@ -1,59 +1,57 @@
 # Architecture
 
-## Overview
+## System Architecture
 
-The implemented architecture is a lightweight full-stack application for wafer-yield analysis. The project is divided into a Python backend for inference and analytics and a Next.js frontend for interactive review. The trained model and preprocessing pipeline are serialized into a package so the service can run locally without retraining for normal use.
-
-## Components
-
-| Component | Technology in this repository | Responsibility |
-|---|---|---|
-| Frontend application | Next.js, React, Tailwind CSS, Framer Motion | Presents dashboard pages, wafer views, batch analysis, risk summaries, and corrective-action workflows |
-| Backend API | FastAPI, Python, pandas, NumPy, joblib, SHAP | Validates inputs, aligns sensor features, runs inference, calculates SHAP explanations, and exposes analytics endpoints |
-| Model package | XGBoost model artifact plus imputer and metadata | Stores the trained classifier, threshold, feature names, and preprocessing configuration |
-| Training pipeline | Python notebook and `train_model.py` | Builds the model from the SECOM-style data and exports the model bundle |
-| Optional persistence | Supabase client integration | Writes prediction and batch results when credentials are configured |
-| Optional AI helper | OpenRouter integration in the frontend API route | Provides an optional conversational assistant when an API key is configured |
-
-## Data Flow
-
-1. A user opens the Next.js dashboard and either selects a wafer record or uploads a CSV batch file.
-2. The frontend sends requests to the FastAPI backend at `http://localhost:8000`.
-3. The backend loads the model bundle from `src/backend/yieldsentinel_best_model.pkl` and applies the stored feature schema and imputation logic.
-4. The model computes pass/fail probabilities for each wafer and assigns a prediction using the configured threshold.
-5. SHAP is used to rank the strongest feature contributors for the predicted risk.
-6. The backend returns structured data to the frontend for dashboard summaries, root-cause views, defect-pattern summaries, and batch-risk analysis.
-7. If configured, the frontend chat route can query OpenRouter for operational assistance using the latest batch analysis summary.
-
-## Mermaid Architecture Diagram
+YieldSentinel AI is a full-stack wafer-yield analysis application. A Next.js frontend provides the dashboard and sends REST requests to a FastAPI backend. The backend loads a serialized XGBoost model package, aligns incoming sensor data to the trained feature schema, imputes missing values, calculates pass/fail probabilities, and produces SHAP-based explanations. Optional Supabase persistence and an OpenRouter chat assistant extend the core workflow when their credentials are configured.
 
 ```mermaid
 graph TD
-    U[User / Engineer] --> F[Next.js Frontend\nDashboard + Batch + Wafer pages]
-    F -->|REST requests| B[FastAPI Backend\nPredict + Analytics endpoints]
-    B --> M[Serialized Model Package\nyieldsentinel_best_model.pkl]
-    B --> P[Preprocessing + Threshold logic]
-    B --> X[XGBoost classifier]
-    X --> R[Pass/Fail probability]
-    R --> SH[SHAP feature explanations]
-    B --> D[Dashboard / Root Cause / Defect Pattern responses]
-    F --> A[Optional OpenRouter assistant]
-    B --> S[Optional Supabase persistence]
+    U[Process or quality engineer] --> F[Next.js frontend\nReact + Tailwind dashboard]
+    F -->|REST and CSV upload| B[FastAPI backend]
+    B --> V[Input validation and feature alignment]
+    V --> I[Median imputation]
+    I --> M[Serialized XGBoost model package]
+    M --> P[Pass/fail probabilities]
+    P --> S[SHAP feature explanations]
+    B --> A[Dashboard and analytics endpoints]
+    A --> F
+    B -. Optional .-> DB[Supabase persistence]
+    F -. Optional .-> C[OpenRouter chat assistant]
 ```
 
-## Operational Notes
+## Components
 
-- The backend is stateless for the core inference flow; it loads the model on startup and responds to requests.
-- The batch analytics endpoints depend on the most recently uploaded CSV analysis stored in memory during the running session.
-- The optional AI assistant and Supabase persistence are support features, not required for the main prediction workflow.
-- The project is designed as a local prototype and is not a large-scale production deployment stack.
+| Component | Technology | Responsibility |
+|---|---|---|
+| Frontend | Next.js, React, TypeScript, Tailwind CSS, Framer Motion | Provides dashboard pages for wafer scoring, batch risk, process review, root-cause analysis, defect patterns, and corrective actions. |
+| Backend API | FastAPI, Python, Pydantic | Exposes health, model-info, single-wafer prediction, batch CSV prediction, dashboard, root-cause, and defect-pattern endpoints. |
+| Machine learning | XGBoost, scikit-learn, pandas, NumPy | Classifies wafer outcomes using the trained feature set and preprocessing configuration. |
+| Explainability | SHAP | Ranks the strongest feature contributions for a prediction and indicates whether they push toward PASS or FAIL. |
+| Model artifact | joblib serialized package | Stores the trained model, feature names, imputer, target metadata, and prediction threshold used by the API. |
+| Training pipeline | Python notebook, `train_model.py`, SECOM-style CSV dataset | Trains and evaluates the model and exports the model package used for inference. |
+| Optional persistence | Supabase | Stores prediction and batch results when Supabase environment variables are configured. |
+| Optional assistant | Next.js API route, OpenRouter | Provides conversational assistance based on the latest analysis when an OpenRouter API key is configured. |
 
-## Security and Practical Considerations
+## Data Flow
 
-- Secrets such as API keys should be kept in environment files and never committed to the repository.
-- The frontend chat route works only when `OPENROUTER_API_KEY` is configured.
-- Local CORS is enabled in the FastAPI backend for development use; it is not an enterprise-grade security layer.
+1. An engineer opens the Next.js dashboard and enters sensor values for one wafer or selects a CSV file containing multiple wafer records.
+2. The frontend sends a JSON request to `/predict` or a multipart file request to `/predict-csv` on the FastAPI backend.
+3. The backend validates the request and aligns the supplied columns with the feature names stored in `yieldsentinel_best_model.pkl`.
+4. Missing sensor values are filled using the median imputer saved in the model package.
+5. The XGBoost model calculates PASS and FAIL probabilities. The configured threshold determines the final wafer prediction and anomaly score.
+6. For single-wafer predictions, SHAP calculates and ranks the strongest feature contributors behind the result.
+7. The backend returns structured prediction, batch, dashboard, root-cause, and defect-pattern data to the frontend.
+8. The dashboard renders risk summaries and investigation views. When configured, prediction and batch results are also written to Supabase, and the chat route can request assistance from OpenRouter.
+
+## Security Considerations
+
+- API keys and Supabase credentials must be stored in environment variables and must not be committed to the repository.
+- The OpenRouter assistant is disabled unless `OPENROUTER_API_KEY` is configured.
+- Supabase persistence is optional and degrades gracefully when database credentials are unavailable.
+- The backend validates request bodies with Pydantic and validates uploaded CSV content before inference.
+- CORS is currently permissive for local development. A production deployment should restrict `allow_origins` to the deployed frontend domain.
+- The serialized model artifact is loaded from a configured local path. Only trusted model files should be deployed because joblib deserialization is not suitable for untrusted input.
 
 ## Scalability Notes
 
-This solution is intentionally lightweight and suitable for a hackathon proof-of-concept. The backend could be extended to support more production-ready inputs, a more robust manufacturing data store, and a more comprehensive analytics pipeline, but the current implementation remains focused on local, explainable wafer-risk analysis from the available dataset and repository code.
+The core FastAPI inference service is stateless apart from the latest in-memory batch analysis, so it could be horizontally scaled behind a load balancer after moving batch state and prediction history to shared storage. A production version could add a managed database, asynchronous batch jobs, object storage for uploaded CSV files, authentication, rate limiting, and model-version tracking. Model inference could also be moved to workers for large uploads, while the Next.js frontend could be deployed independently behind a CDN.

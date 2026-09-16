@@ -35,14 +35,4 @@ Most current approaches still rely on fragmented review of sensor data, batch su
 
 A practical solution needs to combine prediction and interpretation. Teams need a system that can assess wafer risk early, explain the strongest contributors behind a failure, and make the investigation path more actionable.
 
-## Challenge Outcome
 
-The project addresses the need to review wafer and batch data, identify likely process drivers, rank probable causes, and flag upcoming batches that may be at risk. It supports a workflow where engineers can:
-
-- evaluate wafer-level pass/fail risk from sensor inputs
-- screen multiple records with batch CSV analysis
-- identify top contributing signals responsible for risky predictions
-- review defect-pattern and root-cause views for operational investigation
-- track corrective-action decisions within the dashboard workflow
-
-This is the problem context for the IBM Bob Hackathon submission and the focus of the implemented solution in this repository.
