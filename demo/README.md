@@ -14,7 +14,7 @@ The video demonstrates the YieldSentinel AI dashboard, wafer and batch-risk work
 
 The deployed frontend is available at:
 
-https://bob-ai-hackathon-think-tank-x.vercel.app/
+NOT DEPLOYED
 
 The backend can also be run locally using [`docs/setup-guide.md`](../docs/setup-guide.md).
 
