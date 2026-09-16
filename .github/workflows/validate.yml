@@ -17,9 +17,12 @@ jobs:
 
       - name: Install yq (YAML parser)
         run: |
-          sudo wget -qO /usr/local/bin/yq \
-            https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          YQ_VERSION="v4.45.4"
+          sudo curl --fail --location --retry 3 --retry-delay 2 \
+            --output /usr/local/bin/yq \
+            "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
           sudo chmod +x /usr/local/bin/yq
+          yq --version
 
       # ── 1. Required files exist ────────────────────────────────────────────
       - name: Check required files exist
