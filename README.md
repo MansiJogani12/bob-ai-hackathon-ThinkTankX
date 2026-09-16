@@ -148,6 +148,18 @@ cd src/backend
 
 The application is designed for a local walkthrough using the setup commands above. The linked files are the repository’s submission artifact locations; no external demo URL is invented here.
 
+## ✅ Submission Validation
+
+The repository includes a GitHub Actions workflow at `.github/workflows/validate.yml` that checks the submission metadata, required artifacts, source files, demo link, and README placeholders. The current `submission.yaml` contains the required team, track, contact, title, problem statement, solution summary, and feature values.
+
+To validate the metadata locally, run:
+
+```powershell
+python -c "import yaml; from pathlib import Path; d=yaml.safe_load(Path('submission.yaml').read_text(encoding='utf-8')); assert d['team']['track'] in {'AI','DevOps','Sustainability','Open'}; assert d['submission']['key_features']; print('submission.yaml is valid')"
+```
+
+The failed GitHub run shown in the issue was created before these metadata and documentation updates. Re-run the `Validate Submission` workflow from the latest `main` commit after pushing any local changes.
+
 ## ⚠️ Known Limitations
 
 - The project uses a sample SECOM-style semiconductor dataset and a local trained model artifact rather than a production fab data pipeline.
