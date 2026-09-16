@@ -16,11 +16,11 @@ team:
     email: "24cs100@charusat.edu.in"    # REQUIRED — e.g., "alice.chen@ibm.com"
   members:
     - name: "Mansi Jogani"              # REQUIRED — Team member 1
-      email: ""
+      email: "24it033@charusat.edu.in"
     - name: "Khushi Undhad"             # REQUIRED — Team member 2
-      email: ""
+      email: "24cs101@charusat.edu.in"
     - name: "Priyanshu Macwan"          # REQUIRED — Team member 3
-      email: ""
+      email: "24cs049@charusat.edu.in"
 
 submission:
   title: "S1 Wafer Yield Root Cause & Defect Pattern Analyser"  # REQUIRED — Project display name
