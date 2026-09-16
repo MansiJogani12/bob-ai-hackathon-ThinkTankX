@@ -1,1 +1,1 @@
-https://bob-ai-hackathon-think-tank-x.vercel.app/
+NOT DEPLOYED — run locally using docs/setup-guide.md
