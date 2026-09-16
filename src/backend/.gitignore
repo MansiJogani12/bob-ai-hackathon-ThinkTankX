@@ -1,1 +1,36 @@
+# Environment and secrets
+.env
+.env.local
+.env.production
+*.key
+*.pem
+*.p12
+secrets/
+
+# Python environments and caches
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*.pyo
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Build and coverage artifacts
+build/
+dist/
+htmlcov/
+*.coverage
+
+# Logs and local data
+*.log
+logs/
+data/
+
+# Local model outputs and temporary files
+*.tmp
+*.bak
 "yieldsentinel_best_model.pkl" 

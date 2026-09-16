@@ -1,29 +1,44 @@
-# Demo Overview
+# Demo
 
-This folder contains the presentation and validation artifacts associated with the project.
+This folder contains the ThinkTankX demonstration artifacts for **S1 Wafer Yield Root Cause & Defect Pattern Analyser**.
 
-## Included Files
+## Demo Video
 
-- `demo-video-link.txt` — contains the project demo video link or notes if provided
-- `live-demo-url.txt` — contains the local or hosted demo URL note if applicable
-- `screenshots/` — screenshot assets for dashboard walkthroughs and product validation
+The project walkthrough is available at:
 
-## How to Use This Folder
+https://youtu.be/pylJjxL4T7k
 
-Use the materials in this folder to support the local demonstration or presentation flow for the hackathon submission. The application itself is designed to run locally from the repository using the setup and startup instructions in the root README and setup guide.
+The video demonstrates the YieldSentinel AI dashboard, wafer and batch-risk workflow, and generated analysis output.
 
-## Current Status
+## Live Demo
 
-This repository does not include a verified public deployment URL or a published demo video that should be treated as a final submission asset. The expected local demo path is the repository itself, run according to the instructions in the project documentation.
+The deployed frontend is available at:
 
-## Demo Guidance
+https://bob-ai-hackathon-think-tank-x.vercel.app/
 
-For a judge-friendly walkthrough, demonstrate:
+The backend can also be run locally using [`docs/setup-guide.md`](../docs/setup-guide.md).
 
-- CSV batch upload and batch-risk summary
-- single-wafer prediction
-- dashboard overview with yield and risk metrics
-- root-cause and defect-pattern analysis
-- corrective-action workflow and operational review pages
+## Screenshots
 
-This folder is intended to support those materials while keeping the project documentation honest about what is actually available in the repository.
+The `screenshots/` directory contains application evidence:
+
+- `01-landing-page.png.jpg`
+- `02-main-feature.jpg`
+- `03-compare-analysis.jpeg`
+- `04-batch-predication.jpeg`
+
+The screenshots cover the landing page, main dashboard, comparison analysis, and batch prediction workflow.
+
+## Recommended Demo Flow
+
+1. Start the backend and frontend using `setup.ps1` and `start.ps1`.
+2. Open the dashboard at `http://localhost:3000`.
+3. Upload a wafer batch CSV or enter single-wafer sensor values.
+4. Review PASS/FAIL probabilities and SHAP feature contributors.
+5. Open batch-risk, root-cause, defect-pattern, and corrective-action views.
+
+## Notes
+
+- The core demo uses the included model artifact and SECOM-style dataset.
+- Supabase persistence and the OpenRouter assistant are optional.
+- SHAP results identify important model contributors for investigation; they do not prove a physical root cause.

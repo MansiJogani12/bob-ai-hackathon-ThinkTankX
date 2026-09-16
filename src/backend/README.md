@@ -1,59 +1,65 @@
-# Backend Overview
+# Backend Source Code
 
-This folder contains the FastAPI backend used by the YieldSentinel AI application. It is responsible for model loading, inference, batch analysis, and analytics endpoints used by the dashboard.
+This folder contains the FastAPI backend for **YieldSentinel AI**, the ThinkTankX wafer-yield analysis project.
 
-## Key Responsibilities
-
-- load the trained XGBoost model package and metadata at startup
-- transform incoming wafer inputs to the expected feature schema
-- impute missing values using the stored preprocessing object
-- return pass/fail probabilities and top SHAP feature contributors
-- handle CSV upload analysis for multiple wafers
-- provide dashboard metrics, root-cause summaries, and defect-pattern outputs
-- optionally persist prediction data to Supabase when credentials are configured
-
-## Main Files
+## Structure Guidelines
 
 ```text
 src/backend/
-├── main.py
-├── train_model.py
-├── requirements.txt
-├── uci-secom.csv
-├── yieldsentinel_best_model.pkl
-├── supabase_client.py
-├── supabase_migrations.sql
-├── README.md
-└── .venv/   (created locally during setup)
+	main.py                    <- FastAPI application and inference endpoints
+	train_model.py             <- Optional model training and export script
+	requirements.txt           <- Python dependencies
+	uci-secom.csv              <- Sample SECOM-style dataset
+	yieldsentinel_best_model.pkl <- Trained model package used at runtime
+	supabase_client.py         <- Optional Supabase persistence helpers
+	supabase_migrations.sql    <- Optional Supabase table definitions
+	Procfile                   <- Deployment process command
+	vercel.json                <- Deployment configuration
 ```
+
+## Important Files to Include
+
+- `main.py` - loads the model, validates requests, performs inference, and serves analytics.
+- `requirements.txt` - lists FastAPI, pandas, NumPy, scikit-learn, XGBoost, SHAP, joblib, and Supabase dependencies.
+- `train_model.py` - retrains the classifier from `uci-secom.csv` when required.
+- `yieldsentinel_best_model.pkl` - stores the model, feature schema, imputer, threshold, and metadata.
+- `supabase_client.py` and `supabase_migrations.sql` - optional persistence integration.
+- `Procfile` and `vercel.json` - deployment configuration for the backend service.
 
 ## API Endpoints
 
-The backend exposes the following endpoints in the current implementation:
-
-| Method | Path | Purpose |
+| Method | Path | Responsibility |
 |---|---|---|
-| GET | `/` | Basic health response |
-| GET | `/health` | Health check used by the frontend |
-| GET | `/model-info` | Returns the model metadata and feature list |
-| POST | `/predict` | Runs single-wafer inference and SHAP ranking |
-| POST | `/predict-csv` | Runs batch analysis for uploaded CSV data |
-| GET | `/analysis-summary` | Returns a compact summary of the latest batch |
-| GET | `/dashboard` | Returns command-center style analytics |
-| GET | `/root-causes` | Returns ranked root-cause indicators |
-| GET | `/defect-patterns` | Returns defect-pattern summaries |
+| GET | `/` | Service health response |
+| GET | `/health` | Frontend health check |
+| GET | `/model-info` | Model metadata and feature schema |
+| POST | `/predict` | Single-wafer prediction with SHAP contributors |
+| POST | `/predict-csv` | Batch CSV prediction and risk summary |
+| GET | `/analysis-summary` | Latest uploaded batch summary |
+| GET | `/dashboard` | Yield, risk, and operational dashboard metrics |
+| GET | `/root-causes` | Ranked root-cause indicators from the latest batch |
+| GET | `/defect-patterns` | Defect-pattern analysis data |
 
 ## Model Workflow
 
-The backend expects a serialized model package with:
+1. The API loads `yieldsentinel_best_model.pkl` at startup.
+2. Incoming sensor data is aligned to the stored feature names.
+3. Missing and invalid numeric values are handled with the stored median imputer.
+4. XGBoost calculates PASS and FAIL probabilities using the stored threshold.
+5. SHAP ranks the strongest contributors for single-wafer predictions.
+6. Batch analytics are retained for the current server session and returned to the dashboard.
 
-- feature names
-- model object
-- threshold value
-- imputer for missing values
-- metadata such as model name and target column
+## Environment Variables
 
-This is loaded from `yieldsentinel_best_model.pkl` and used by the inference endpoints.
+Optional backend variables are documented in [`src/.env.example`](../.env.example):
+
+| Variable | Purpose | Required |
+|---|---|---|
+| `MODEL_PATH` | Relative or absolute model package path | No; defaults to `yieldsentinel_best_model.pkl` |
+| `SUPABASE_URL` | Supabase project URL | No |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-side Supabase persistence key | No |
+
+The backend works without Supabase credentials. Never commit a real `.env` file or service key.
 
 ## Local Run
 
@@ -64,7 +70,7 @@ From the repository root:
 .\start.ps1
 ```
 
-Or run the backend manually:
+To run only the backend:
 
 ```powershell
 cd src/backend
@@ -73,17 +79,19 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m uvicorn main:app --reload --port 8000
 ```
 
-## Retraining
+The API is available at `http://localhost:8000`, with health status at `http://localhost:8000/health`.
 
-If the model needs to be regenerated from the included dataset:
+## Retraining
 
 ```powershell
 cd src/backend
 .\.venv\Scripts\python.exe train_model.py --data uci-secom.csv
 ```
 
-## Notes
+## What Not to Include in the Backend Folder
 
-- The backend is designed to function as a local-run prototype.
-- The optional Supabase persistence layer only writes when credentials are available.
-- The analytics endpoints depend on the most recent CSV upload during the active server session.
+- `.env` files containing credentials
+- `.venv/`, `__pycache__/`, `*.pyc`, and build artifacts
+- temporary logs or local deployment output
+
+These paths are excluded by the repository and backend `.gitignore` files.
