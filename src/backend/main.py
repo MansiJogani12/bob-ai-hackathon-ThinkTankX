@@ -20,10 +20,13 @@ from __future__ import annotations
 import io
 import os
 import time
-from dotenv import load_dotenv
-load_dotenv()  # loads src/backend/.env into os.environ
 from pathlib import Path
 from typing import Any
+
+from dotenv import load_dotenv
+
+BASE_DIR = Path(__file__).resolve().parent
+load_dotenv(BASE_DIR / ".env")
 
 # Supabase persistence — optional, degrades gracefully if credentials absent
 from supabase_client import save_prediction, save_batch_run  # noqa: E402
@@ -58,7 +61,8 @@ app.add_middleware(
 # Load model on startup
 # ─────────────────────────────────────────────────────────────────────────────
 
-MODEL_PATH = os.environ.get("MODEL_PATH", "yieldsentinel_best_model.pkl")
+configured_model_path = Path(os.environ.get("MODEL_PATH", "yieldsentinel_best_model.pkl"))
+MODEL_PATH = configured_model_path if configured_model_path.is_absolute() else BASE_DIR / configured_model_path
 
 _pkg: dict[str, Any] = {}
 _explainer: shap.Explainer | None = None
@@ -69,7 +73,7 @@ _latest_batch: dict[str, Any] | None = None
 def load_model() -> None:
     global _pkg, _explainer
 
-    pkl = Path(MODEL_PATH)
+    pkl = MODEL_PATH
     if not pkl.exists():
         print(
             f"[WARNING] Model file not found at '{MODEL_PATH}'. "

@@ -1,78 +1,109 @@
-# Frontend Overview
+# Frontend Source Code
 
-This folder contains the Next.js dashboard for the YieldSentinel AI project. It is the user-facing layer for risk review, batch analytics, and wafer investigation.
+This folder contains the Next.js and React dashboard for YieldSentinel AI. It is the user-facing layer for wafer-risk prediction, batch analysis, root-cause review, defect-pattern investigation, and corrective-action workflows.
 
-## What the Frontend Includes
+## Structure Guidelines
 
-The application currently includes pages and views for:
-
-- command-center dashboard overview
-- batch upload and CSV-based analysis
-- wafer risk screening and upcoming-batch review
-- single-wafer prediction flow
-- defect intelligence and process correlation views
-- root-cause review and corrective-action tracking
-- optional conversational analysis through the chat route
-
-## Main Structure
+The frontend follows the web-application structure inside `src/frontend/`:
 
 ```text
 src/frontend/
-├── app/
-│   ├── api/
-│   │   ├── chat/
-│   │   │   └── route.ts
-│   │   └── corrective-ai/
-│   │       └── route.ts
-│   ├── components/
-│   ├── dashboard/
-│   │   ├── batch/
-│   │   ├── batchrisk/
-│   │   ├── compare/
-│   │   ├── corrective/
-│   │   ├── defects/
-│   │   ├── history/
-│   │   ├── intelligence/
-│   │   ├── process/
-│   │   ├── rootcause/
-│   │   ├── wafer/
-│   │   └── layout.tsx
-│   ├── globals.css
-│   ├── layout.tsx
-│   ├── page.tsx
-│   ├── providers.tsx
-│   └── context.tsx
-├── public/
-├── src/
-│   ├── lib/
-│   ├── services/
-│   └── store.tsx
-├── package.json
-├── package-lock.json
-├── next.config.mjs
-├── postcss.config.mjs
-├── tailwind.config.ts
-├── tsconfig.json
-└── README.md
+  app/             <- Next.js App Router pages, layouts, dashboard views, and API routes
+  public/          <- Static frontend assets and frame resources
+  src/             <- Shared frontend libraries, services, and client state
+  package.json     <- Dependency manifest and npm scripts
+  next.config.mjs  <- Next.js configuration
 ```
 
-## App Behavior
+### Application Routes
 
-The frontend consumes the FastAPI backend at `http://127.0.0.1:8000` by default. It calls endpoints such as:
+```text
+app/
+  api/
+    chat/           <- Optional OpenRouter conversational analysis route
+    corrective-ai/  <- Optional corrective-action assistant route
+  dashboard/        <- Operational dashboard pages
+    batch/          <- CSV batch analysis
+    batchrisk/      <- Batch risk review
+    compare/        <- Analysis comparison
+    corrective/     <- Corrective-action workflow
+    defects/        <- Defect-pattern investigation
+    history/        <- Saved analysis history
+    intelligence/   <- Yield intelligence view
+    process/        <- Process analysis
+    rootcause/      <- Root-cause review
+    wafer/          <- Single-wafer analysis
+  components/       <- Reusable dashboard and chatbot components
+  fonts/            <- Frontend font assets
+  layout.tsx        <- Root layout
+  page.tsx          <- Landing page
+  providers.tsx     <- Application providers
+  context.tsx       <- Frontend context
+```
 
-- `/health`
-- `/model-info`
-- `/predict`
-- `/predict-csv`
-- `/dashboard`
-- `/root-causes`
-- `/defect-patterns`
+### Shared Frontend Code
 
-The dashboard then presents the returned data in multiple operational views.
+```text
+src/
+  lib/
+    analysisDb.ts   <- Supabase analysis persistence helpers
+    store.tsx       <- Shared client state
+    supabase.ts     <- Supabase browser client
+  services/
+    api.ts          <- Typed calls to the FastAPI backend
+```
 
-## Optional AI Assistant
+## Important Files to Include
 
-The frontend includes an optional chat route in `src/frontend/app/api/chat/route.ts`. It reads configuration from environment variables when present and can send requests to OpenRouter for conversational analysis. The main analytics workflow correctly works without this key.
+- `package.json` - Next.js, React, Supabase, Framer Motion, Tailwind, and TypeScript dependencies
+- `package-lock.json` - Locked npm dependency versions
+- `app/page.tsx` - Main entry page
+- `app/dashboard/` - Implemented operational dashboard routes
+- `src/services/api.ts` - Backend API client for health, model, prediction, batch, dashboard, root-cause, and defect endpoints
+- `src/lib/analysisDb.ts` - Optional saved-analysis and corrective-action persistence helpers
+- `next.config.mjs` - Next.js configuration
+- `postcss.config.mjs` and `tailwind.config.ts` - CSS processing and Tailwind configuration
+- `tsconfig.json` - TypeScript compiler configuration
+- `public/` - Static files used by the dashboard
+
+## Environment Variables
+
+The core dashboard can use the default backend at `http://127.0.0.1:8000`. Optional integrations are configured in `src/frontend/.env.local`:
+
+| Variable | Purpose | Required |
+|---|---|---|
+| `NEXT_PUBLIC_YIELDSENTINEL_BACKEND_URL` | FastAPI backend URL | No |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL for authentication and saved analyses | No |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase browser-safe anonymous key | No |
+| `OPENROUTER_API_KEY` | Optional chat and corrective-action assistant key | No |
+| `OPENROUTER_MODEL` | Optional OpenRouter model identifier | No |
+
+Never commit `.env.local` or real credentials. Use `src/.env.example` as the project-level reference.
+
+## What Not to Include in the Frontend Folder
+
+- `node_modules/`
+- `.next/`, `dist/`, or other build artifacts
+- `.env.local` or any file containing real credentials
+- Python virtual environments or backend-only files
+- Temporary logs and local deployment output
+
+These paths are excluded by the repository `.gitignore`.
+
+## Backend API Integration
+
+The frontend calls the FastAPI service using the following endpoints:
+
+| Method | Endpoint | Frontend purpose |
+|---|---|---|
+| GET | `/health` | Sidebar and service health checks |
+| GET | `/model-info` | Display model schema and threshold information |
+| POST | `/predict` | Single-wafer prediction and SHAP contributors |
+| POST | `/predict-csv` | Batch CSV risk analysis |
+| GET | `/analysis-summary` | Latest batch summary for assistant context |
+| GET | `/dashboard` | Command-center metrics |
+| GET | `/root-causes` | Ranked root-cause indicators |
+| GET | `/defect-patterns` | Defect-pattern summaries |
 
 ## Local Run
 
@@ -91,14 +122,21 @@ npm install
 npm run dev
 ```
 
-The app is expected to run on:
+The frontend runs at:
 
 ```text
 http://localhost:3000
 ```
 
-## Notes
+The backend should be running at `http://localhost:8000` for live prediction and analytics data.
 
-- The frontend is part of a local demo/prototype flow and is not a production deployment setup.
-- The design and page structure reflect the implemented dashboard flows in this repository.
-- The codebase intentionally keeps stylistic and framework files to a minimum and focuses on the operational dashboard behavior.
+## Validation
+
+Use the following commands for frontend validation:
+
+```powershell
+cd src/frontend
+npm run build
+```
+
+The frontend is a local and deployed prototype. Its core dashboard workflow is designed to work without Supabase or OpenRouter when the backend is available.

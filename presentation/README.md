@@ -1,35 +1,44 @@
-# Presentation Notes
+# Presentation
 
-This folder is intended to hold the submission presentation materials for the IBM Bob AI Hackathon.
+Place the ThinkTankX slide deck in this folder.
 
-## Recommended Content
+## Accepted Formats
 
-A concise slide deck for this project should include:
+The presentation deck is available as:
 
-1. Title and team identity
-2. Problem statement and business impact
-3. Solution overview and product concept
-4. Architecture and workflow
-5. Local demo or dashboard walkthrough
-6. Key features and risk insight outputs
-7. Known limitations and next-step opportunities
-8. Team acknowledgement
+- `Slides.pdf` - current PDF deck included in this repository
+- `slides.pdf` - preferred evaluation filename
+- `slides.pptx` - acceptable PowerPoint format
+- `slides.key` - acceptable macOS Keynote format
 
-## What the Deck Should Emphasize
+Current deck: [`Slides.pdf`](Slides.pdf)
 
-- the semiconductor yield and cost impact at 3nm/5nm nodes
-- the challenge of identifying root causes across high-volume sensor and defect data
-- the implemented workflow for risk prediction and explanation
-- the dashboard-based operational review workflow
-- the difference between a binary prediction and an actionable investigation view
+Project: **S1 Wafer Yield Root Cause & Defect Pattern Analyser**
 
-## Expected Deliverable
+Team: **ThinkTankX**
+Track: **AI**
+Team lead: **Yashvi Tanna**
+Members: **Mansi Jogani, Khushi Undhad, Priyanshu Macwan**
 
-The repository is ready for a local presentation using the application itself, with screenshots or a live walkthrough from the browser. The deck should reference the repository and avoid unsupported IBM integrations or fabricated deployment claims.
+## Recommended Slide Structure (5–8 slides)
 
-## Submission Notes
+The ThinkTankX deck should cover the following sequence:
 
-- Keep the deck concise and judge-friendly
-- Favor product screenshots and system workflow visuals over code dumps
-- Explain the actual implemented functionality from the repository
-- Emphasize the business impact and the practical value of the explainable dashboard workflow
+- **Slide 1: Title** - YieldSentinel AI, project title, ThinkTankX, and AI track
+- **Slide 2: Problem** - Semiconductor wafer-yield loss, affected process and quality engineers, and the cost of delayed investigation
+- **Slide 3: Solution** - XGBoost wafer-risk prediction, batch analysis, SHAP explanations, and dashboard workflow
+- **Slide 4: Architecture** - Next.js frontend, FastAPI backend, model package, preprocessing, prediction, and analytics flow
+- **Slide 5: Demo / Key Feature** - Single-wafer scoring, CSV batch risk screening, or SHAP contributor review
+- **Slide 6: Technology Stack** - Python, TypeScript, FastAPI, Next.js, XGBoost, SHAP, pandas, NumPy, and optional Supabase/OpenRouter integrations
+- **Slide 7: Results / Impact** - Earlier risk prioritization, explainable investigation, batch-level review, and prototype limitations
+- **Slide 8: Team** - Yashvi Tanna, Mansi Jogani, Khushi Undhad, and Priyanshu Macwan with their project contributions
+
+## Tips
+
+- Keep slides visual; use dashboard screenshots and architecture diagrams instead of dense text.
+- Present one idea per slide.
+- Use a minimum font size of 24pt for readability.
+- Do not paste large code blocks into slides; reference the repository instead.
+- Demonstrate actual implemented behavior from the local application or live deployment.
+- Explain that SHAP identifies strong model contributors for investigation but does not prove a physical root cause.
+- Do not claim IBM watsonx.ai or IBM Cloud integration because those services are not directly used by the current implementation.

@@ -137,3 +137,7 @@ jobs:
           echo "Team:  $(yq '.team.name' submission.yaml)"
           echo "Title: $(yq '.submission.title' submission.yaml)"
           echo "Track: $(yq '.team.track' submission.yaml)"
+          echo "Lead:  $(yq '.team.lead.name' submission.yaml) <$(yq '.team.lead.email' submission.yaml)>"
+          echo "Repo:  https://github.com/MansiJogani12/bob-ai-hackathon-ThinkTankX"
+          echo "Demo:  $(head -1 demo/demo-video-link.txt)"
+          echo "Live:  $(head -1 demo/live-demo-url.txt)"
